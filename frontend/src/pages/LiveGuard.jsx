@@ -4,6 +4,12 @@ import {
   FilesetResolver,
 } from "@mediapipe/tasks-vision";
 import { Peer } from "peerjs";
+import {
+  calculateTrustGuardRisk,
+  fingerprintDistance,
+  getFrameFingerprint,
+  scoreTemporalSignals,
+} from "./liveGuardMetrics";
 import "./LiveGuard.css";
 
 const LANDMARK_MODEL =
@@ -60,93 +66,6 @@ function distance(a, b) {
       dy * dy +
       dz * dz
   );
-}
-
-function getRiskLevel(score) {
-  if (score > 50) {
-    return "HIGH";
-  }
-
-  if (score >= 30) {
-    return "MEDIUM";
-  }
-
-  return "LOW";
-}
-
-/*
- * Fuse measured signals using the documented project weights. Missing
- * optional inputs are omitted and the remaining weights are normalized.
- */
-function calculateTrustGuardRisk({
-  replayRisk = null,
-  livenessRisk = null,
-  livenessCompleted = false,
-  livenessFailed = false,
-  faceConsistencyRisk = null,
-  voiceRisk = null,
-  facePresenceRisk = null,
-}) {
-  const candidates = [
-    { name: "Replay / temporal anomaly", value: replayRisk, weight: 0.30 },
-    {
-      name: "Liveness challenge",
-      value: livenessCompleted ? livenessRisk : null,
-      weight: 0.45,
-    },
-    { name: "Face consistency", value: faceConsistencyRisk, weight: 0.15 },
-    { name: "Voice acoustic anomaly", value: voiceRisk, weight: 0.07 },
-    { name: "Face presence", value: facePresenceRisk, weight: 0.03 },
-  ];
-
-  const signals = candidates
-    .filter(
-      ({ value }) =>
-        typeof value === "number" && Number.isFinite(value)
-    )
-    .map((signal) => ({
-      ...signal,
-      value: clamp(signal.value),
-    }));
-
-  if (!signals.length) {
-    return {
-      score: null,
-      level: "ANALYZING",
-      reasons: ["Waiting for enough analysis signals"],
-    };
-  }
-
-  const totalWeight = signals.reduce(
-    (sum, signal) => sum + signal.weight,
-    0
-  );
-  const score = Math.round(
-    signals.reduce(
-      (sum, signal) => sum + signal.value * signal.weight,
-      0
-    ) / totalWeight
-  );
-
-  let adjustedScore = score;
-  // A failed interactive challenge merits review, but does not by itself prove fraud.
-  if (livenessFailed) adjustedScore = Math.max(adjustedScore, 30);
-  const highSignals = signals.filter((signal) => signal.value >= 70);
-  const level = getRiskLevel(adjustedScore);
-
-  const reasons = highSignals.map((signal) => signal.name);
-  if (livenessFailed) {
-    reasons.push("Liveness challenge failed; retry or verify manually");
-  }
-  if (!reasons.length) {
-    reasons.push("No immediate high-risk signal detected");
-  }
-
-  return {
-    score: clamp(adjustedScore),
-    level,
-    reasons: [...new Set(reasons)],
-  };
 }
 
 function LiveGuard({ onBack })  {
@@ -207,6 +126,15 @@ function LiveGuard({ onBack })  {
     useRef(null);
 
   const frameDiffHistoryRef =
+    useRef([]);
+
+  const frameFingerprintHistoryRef =
+    useRef([]);
+
+  const repeatedFrameHistoryRef =
+    useRef([]);
+
+  const frameDisruptionHistoryRef =
     useRef([]);
 
   // ----------------------------------------------------------
@@ -1111,6 +1039,9 @@ function LiveGuard({ onBack })  {
         lastFrameRef.current =
           now;
 
+        // Temporal analysis applies to the stream even when no face is found.
+        analyzeFrameFreshness(video);
+
         try {
           canvas.width =
             video.videoWidth;
@@ -1212,10 +1143,6 @@ function LiveGuard({ onBack })  {
 
           processLiveness(
             landmarks
-          );
-
-          analyzeFrameFreshness(
-            video
           );
 
           analyzeFaceConsistency(
@@ -1617,221 +1544,94 @@ function LiveGuard({ onBack })  {
   // REPLAY
   // ==========================================================
 
-  function analyzeFrameFreshness(
-    video
-  ) {
-    const now =
-      performance.now();
+  function analyzeFrameFreshness(video) {
+    const now = performance.now();
+    if (now - lastSampleTimeRef.current < 250) return;
+    lastSampleTimeRef.current = now;
 
-    if (
-      now -
-        lastSampleTimeRef.current <
-      250
-    ) {
-      return;
+    const canvas = sampleCanvasRef.current || document.createElement("canvas");
+    canvas.width = 160;
+    canvas.height = 90;
+    sampleCanvasRef.current = canvas;
+
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return;
+
+    ctx.drawImage(video, 0, 0, 160, 90);
+    const pixels = ctx.getImageData(0, 0, 160, 90).data;
+    const fingerprint = getFrameFingerprint(pixels);
+    const fingerprintHistory = frameFingerprintHistoryRef.current;
+    const repeatedFrame = fingerprintHistory.some(({ signature, sampledAt }) => {
+      const age = now - sampledAt;
+      return age >= 1500 && age <= 10000 &&
+        fingerprintDistance(fingerprint, signature) <= 0.05;
+    });
+
+    fingerprintHistory.push({ signature: fingerprint, sampledAt: now });
+    if (fingerprintHistory.length > 40) fingerprintHistory.shift();
+
+    repeatedFrameHistoryRef.current.push(repeatedFrame);
+    if (repeatedFrameHistoryRef.current.length > 16) {
+      repeatedFrameHistoryRef.current.shift();
     }
 
-    lastSampleTimeRef.current =
-      now;
-
-    const canvas =
-      sampleCanvasRef.current ||
-      document.createElement(
-        "canvas"
-      );
-
-    canvas.width =
-      160;
-
-    canvas.height =
-      90;
-
-    sampleCanvasRef.current =
-      canvas;
-
-    const ctx =
-      canvas.getContext(
-        "2d",
-        {
-          willReadFrequently:
-            true,
-        }
-      );
-
-    if (!ctx) {
-      return;
-    }
-
-    ctx.drawImage(
-      video,
-      0,
-      0,
-      160,
-      90
-    );
-
-    const image =
-      ctx.getImageData(
-        0,
-        0,
-        160,
-        90
-      );
-
-    const pixels =
-      image.data;
-
-    const previous =
-      previousPixelsRef.current;
-
+    const previous = previousPixelsRef.current;
     if (previous) {
-      let difference =
-        0;
+      let difference = 0;
+      let disruptiveSamples = 0;
+      let sampledPixels = 0;
 
-      for (
-        let i = 0;
-        i <
-        pixels.length;
-        i += 16
-      ) {
-        difference +=
-          Math.abs(
-            pixels[i] -
-              previous[i]
-          );
+      // Sample every fourth pixel while retaining RGB differences.
+      for (let i = 0; i < pixels.length; i += 16) {
+        const redDifference = Math.abs(pixels[i] - previous[i]);
+        const greenDifference = Math.abs(pixels[i + 1] - previous[i + 1]);
+        const blueDifference = Math.abs(pixels[i + 2] - previous[i + 2]);
+        const colorDifference =
+          redDifference + greenDifference + blueDifference;
 
-        difference +=
-          Math.abs(
-            pixels[i + 1] -
-              previous[i + 1]
-          );
-
-        difference +=
-          Math.abs(
-            pixels[i + 2] -
-              previous[i + 2]
-          );
+        difference += colorDifference;
+        sampledPixels += 1;
+        if (colorDifference >= 420) disruptiveSamples += 1;
       }
 
-      const sampled =
-        Math.floor(
-          pixels.length /
-            16
-        );
-
-      const avgDiff =
-        difference /
-        Math.max(
-          sampled,
-          1
-        );
-
-      frameDiffHistoryRef.current.push(
-        avgDiff
-      );
-
-      if (
-        frameDiffHistoryRef.current
-          .length >
-        20
-      ) {
+      const avgDiff = difference / Math.max(sampledPixels, 1);
+      frameDiffHistoryRef.current.push(avgDiff);
+      if (frameDiffHistoryRef.current.length > 40) {
         frameDiffHistoryRef.current.shift();
       }
 
-      const history =
-        frameDiffHistoryRef.current;
-
-      const lowFrames =
-        history.filter(
-          (value) =>
-            value < 2.2
-        ).length;
-
-      const frozenRatio =
-        lowFrames /
-        Math.max(
-          history.length,
-          1
-        );
-
-      const freshness =
-        clamp(
-          100 -
-            frozenRatio *
-              100
-        );
-
-      setFrameFreshness(
-        Math.round(
-          freshness
-        )
-      );
-
-      let replay =
-        0;
-
-      if (
-        history.length >=
-          10 &&
-        frozenRatio >
-          0.75
-      ) {
-        replay += 65;
-      } else if (
-        history.length >=
-          8 &&
-        frozenRatio >
-          0.55
-      ) {
-        replay += 35;
+      const disruptionRatio =
+        disruptiveSamples / Math.max(sampledPixels, 1);
+      frameDisruptionHistoryRef.current.push(disruptionRatio >= 0.55);
+      if (frameDisruptionHistoryRef.current.length > 16) {
+        frameDisruptionHistoryRef.current.shift();
       }
 
-      const mean =
-        average(
-          history
-        );
-
-      if (
-        history.length >=
-          10 &&
-        mean < 1.5
-      ) {
-        replay += 25;
-      }
-
-      replay =
-        clamp(replay);
-
-      replayRiskRef.current =
-        replay;
-
-      setReplayScore(
-        Math.round(replay)
+      const temporal = scoreTemporalSignals(
+        frameDiffHistoryRef.current,
+        repeatedFrameHistoryRef.current,
+        frameDisruptionHistoryRef.current
       );
+      replayRiskRef.current = temporal.score;
+      setReplayScore(temporal.score);
+      setFrameFreshness(temporal.freshness);
 
-      if (
-        replay >= 70
-      ) {
+      if (temporal.score >= 70) {
         setVideoRiskStatus(
-          "HIGH REPLAY INDICATOR"
+          temporal.repeatRatio >= 0.6
+            ? "REPEATED FRAME / POSSIBLE LOOP"
+            : temporal.disruptionCount >= 2
+              ? "REPEATED FRAME DISRUPTION"
+              : "HIGH REPLAY INDICATOR"
         );
-      } else if (
-        replay >= 35
-      ) {
-        setVideoRiskStatus(
-          "REVIEW VIDEO SIGNALS"
-        );
+      } else if (temporal.score >= 35) {
+        setVideoRiskStatus("REVIEW VIDEO SIGNALS");
       } else {
-        setVideoRiskStatus(
-          "NO STRONG REPLAY SIGNAL"
-        );
+        setVideoRiskStatus("NO STRONG REPLAY SIGNAL");
       }
     }
 
-    previousPixelsRef.current =
-      new Uint8ClampedArray(
-        pixels
-      );
+    previousPixelsRef.current = new Uint8ClampedArray(pixels);
   }
 
   function resetReplayAnalysis() {
@@ -1843,6 +1643,10 @@ function LiveGuard({ onBack })  {
 
     frameDiffHistoryRef.current =
       [];
+
+    frameFingerprintHistoryRef.current = [];
+    repeatedFrameHistoryRef.current = [];
+    frameDisruptionHistoryRef.current = [];
 
     replayRiskRef.current =
       0;
@@ -2742,8 +2546,7 @@ function LiveGuard({ onBack })  {
       totalFaceFramesRef.current >= 4 &&
       frameDiffHistoryRef.current.length >= 8 &&
       consistencyHistoryRef.current.length >= 2 &&
-      challengeFinished &&
-      voiceAnalysisSettledRef.current;
+      challengeFinished;
 
     if (!enoughSignals) {
       setRiskScore(null);
@@ -3642,8 +3445,7 @@ function LiveGuard({ onBack })  {
                 </span>
 
                 <strong>
-                  {replayScore}
-                  /100
+                  {videoRiskStatus === "WAITING" ? "—" : replayScore + "/100"}
                 </strong>
               </div>
 
@@ -3653,8 +3455,7 @@ function LiveGuard({ onBack })  {
                 </span>
 
                 <strong>
-                  {consistencyRisk}
-                  /100
+                  {consistencyStatus === "WAITING" ? "—" : consistencyRisk + "/100"}
                 </strong>
               </div>
 
@@ -3664,8 +3465,7 @@ function LiveGuard({ onBack })  {
                 </span>
 
                 <strong>
-                  {voiceAnomalyRisk}
-                  /100
+                  {voiceAnomalyRisk == null ? "—" : voiceAnomalyRisk + "/100"}
                 </strong>
               </div>
 
@@ -3855,7 +3655,7 @@ function LiveGuard({ onBack })  {
 
               <div className="metric">
                 <span>Frame freshness</span>
-                <strong>{faceStatus === "FACE DETECTED" ? `${frameFreshness}%` : "—"}</strong>
+                <strong>{videoRiskStatus === "WAITING" ? "—" : frameFreshness + "%"}</strong>
               </div>
 
               <div className="metric">
