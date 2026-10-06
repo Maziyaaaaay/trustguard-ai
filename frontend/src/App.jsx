@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import {
   ArrowDown,
   ArrowRight,
@@ -27,78 +27,12 @@ import "./App.css";
 
 const LiveGuardPage = lazy(() => import("./pages/LiveGuard.jsx"));
 const MediaAnalysisPage = lazy(() => import("./pages/MediaAnalysis.jsx"));
-const MascotView = lazy(() => import("./components/MascotReact.jsx").then((module) => ({ default: module.MascotView })));
-
-const mascotLines = [
-  "Pause a moment. Check the signal.",
-  "A payment request deserves a second look.",
-  "I’m watching the little details.",
-  "When in doubt, verify another way.",
-];
 
 function PageLoader() {
   return (
     <main className="tg-page-loader" role="status" aria-live="polite">
       Loading TrustGuard analysis tools…
     </main>
-  );
-}
-
-function SafetyMascot() {
-  const mascot = useRef(null);
-  const hideTimer = useRef(null);
-  const [line, setLine] = useState(mascotLines[0]);
-  const [showLine, setShowLine] = useState(false);
-
-  useEffect(() => {
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const cue = () => {
-      if (reducedMotion.matches) return;
-      const move = ["wave", "nod", "jump", "surprised"][Math.floor(Math.random() * 4)];
-      mascot.current?.play(move)?.catch?.(() => {});
-      setLine(mascotLines[Math.floor(Math.random() * mascotLines.length)]);
-      setShowLine(true);
-      window.clearTimeout(hideTimer.current);
-      hideTimer.current = window.setTimeout(() => setShowLine(false), 3200);
-    };
-
-    const interval = window.setInterval(cue, 11500);
-    return () => {
-      window.clearInterval(interval);
-      window.clearTimeout(hideTimer.current);
-    };
-  }, []);
-
-  const wave = () => {
-    mascot.current?.play("wave")?.catch?.(() => {});
-    setLine("Hey there. Let’s stay one step ahead.");
-    setShowLine(true);
-    window.clearTimeout(hideTimer.current);
-    hideTimer.current = window.setTimeout(() => setShowLine(false), 3600);
-  };
-
-  return (
-    <aside className="tg-mascot-dock" aria-label="TrustGuard safety mascot">
-      <div className={`tg-mascot-note${showLine ? " is-visible" : ""}`} aria-live="polite">
-        <span className="tg-mascot-note-mark"><Sparkles size={13} /></span>
-        <span>{line}</span>
-      </div>
-      <button className="tg-mascot-button" type="button" onClick={wave} aria-label="Wave to your TrustGuard safety mascot">
-        <span className="tg-mascot-halo" />
-        <img src="/trustguard-mascot.png" alt="" className="tg-mascot-fallback" />
-        <Suspense fallback={null}>
-          <MascotView
-            ref={mascot}
-            src="/trustguard-mascot.riv"
-            className="tg-mascot-canvas"
-            style={{ width: "100%", height: "100%" }}
-            autoBlink
-          />
-        </Suspense>
-        <span className="tg-mascot-ping" aria-hidden="true" />
-      </button>
-      <span className="tg-mascot-label"><LockKeyhole size={11} /> your guard buddy</span>
-    </aside>
   );
 }
 
@@ -279,7 +213,6 @@ function App() {
     return (
       <div className="tg-tool-shell">
         <Suspense fallback={<PageLoader />}><LiveGuardPage onBack={goHome} /></Suspense>
-        <SafetyMascot />
       </div>
     );
   }
@@ -288,7 +221,6 @@ function App() {
     return (
       <div className="tg-tool-shell">
         <Suspense fallback={<PageLoader />}><MediaAnalysisPage onBack={goHome} /></Suspense>
-        <SafetyMascot />
       </div>
     );
   }
@@ -452,7 +384,6 @@ function App() {
           <span>TrustGuard AI · Prototype <i /> Risk signals, not a final verdict</span>
         </footer>
       </main>
-      <SafetyMascot />
     </div>
   );
 }

@@ -114,7 +114,7 @@
 .tg-tool-card:hover, .tg-tool-card:focus-visible { border-color: #a9ceb3; box-shadow: 0 20px 42px rgba(38, 75, 54, .11); }
 .tg-tool-card:hover::before, .tg-tool-card:focus-visible::before, .tg-signal-panel:hover::before { opacity: 1; }
 .tg-tool-card > * { position: relative; z-index: 1; }
-.tg-tool-card:focus-visible, .tg-button-primary:focus-visible, .tg-nav-item:focus-visible, .tg-nav-specialist:focus-visible, .tg-mascot-button:focus-visible, .tg-signal-tabs button:focus-visible { outline: 3px solid #7ab88c; outline-offset: 3px; }
+.tg-tool-card:focus-visible, .tg-button-primary:focus-visible, .tg-nav-item:focus-visible, .tg-nav-specialist:focus-visible, .tg-signal-tabs button:focus-visible { outline: 3px solid #7ab88c; outline-offset: 3px; }
 .tg-tool-illustration { width: 116px; height: 136px; flex: 0 0 116px; position: relative; display: grid; place-items: center; border-radius: 19px; }
 .live-illustration { background: linear-gradient(145deg, #dcf2e7, #dfeeed); }
 .live-illustration-orbit { width: 82px; height: 82px; position: absolute; border: 1px dashed rgba(69, 143, 99, .33); border-radius: 50%; animation: orbit-turn 15s linear infinite; }
@@ -258,17 +258,6 @@
 .tg-footer > span:last-child { display: inline-flex; align-items: center; gap: 8px; }
 .tg-footer > span:last-child i { width: 3px; height: 3px; border-radius: 50%; background: #9aac9f; }
 
-.tg-mascot-dock { position: fixed; z-index: 30; right: 25px; bottom: 17px; width: 98px; display: flex; flex-direction: column; align-items: center; pointer-events: none; }
-.tg-mascot-button { width: 80px; height: 80px; position: relative; display: block; padding: 5px; border: 0; border-radius: 50%; background: transparent; cursor: pointer; pointer-events: auto; animation: mascot-hover 3.2s steps(5, end) infinite; }
-.tg-mascot-halo { position: absolute; inset: 7px; border: 1px solid rgba(83, 156, 105, .28); border-radius: 50%; background: rgba(255,255,255,.88); box-shadow: 0 7px 24px rgba(37, 86, 55, .18); transition: transform .3s ease, box-shadow .3s ease; }
-.tg-mascot-button:hover .tg-mascot-halo, .tg-mascot-button:focus-visible .tg-mascot-halo { transform: scale(1.11); box-shadow: 0 11px 28px rgba(37, 86, 55, .24); }
-.tg-mascot-fallback, .tg-mascot-canvas { position: absolute; inset: 11px; width: 58px !important; height: 58px !important; display: block; object-fit: contain; }
-.tg-mascot-canvas canvas { width: 100% !important; height: 100% !important; display: block; }
-.tg-mascot-ping { width: 11px; height: 11px; position: absolute; right: 9px; bottom: 10px; border: 3px solid white; border-radius: 50%; background: #64b77d; box-shadow: 0 0 0 0 rgba(100, 183, 125, .4); animation: mascot-ping 2.2s steps(4, end) infinite; }
-.tg-mascot-label { margin-top: -2px; padding: 5px 8px; display: inline-flex; align-items: center; gap: 4px; border: 1px solid #dfebdf; border-radius: 999px; color: #64806e; background: rgba(255,255,255,.91); box-shadow: 0 4px 12px rgba(37, 86, 55, .08); font-size: 7px; font-weight: 800; letter-spacing: .03em; white-space: nowrap; }
-.tg-mascot-note { position: absolute; right: 7px; bottom: 105px; width: max-content; max-width: min(240px, calc(100vw - 40px)); padding: 10px 12px; display: flex; align-items: center; gap: 8px; border: 1px solid #d9e9dc; border-radius: 14px 14px 4px 14px; color: #456a56; background: #fff; box-shadow: 0 8px 24px rgba(35, 77, 50, .12); font-size: 9px; line-height: 1.5; opacity: 0; transform: translateY(7px) scale(.97); transform-origin: bottom right; transition: opacity .2s ease, transform .2s ease; pointer-events: none; }
-.tg-mascot-note.is-visible { opacity: 1; transform: translateY(0) scale(1); }
-.tg-mascot-note-mark { width: 23px; height: 23px; flex: 0 0 23px; display: grid; place-items: center; border-radius: 8px; color: #6b9e74; background: #edf6e9; }
 .tg-tool-shell { min-height: 100vh; }
 .tg-page-loader { min-height: 100vh; display: grid; place-items: center; color: #557765; background: #f6faf3; font-size: 12px; }
 
@@ -291,8 +280,6 @@
 @keyframes alert-jiggle { 0%, 90%, 100% { transform: rotate(0); } 92%, 96% { transform: rotate(-9deg); } 94%, 98% { transform: rotate(9deg); } }
 @keyframes cursor-tap { 0%, 100% { transform: translate(0, 0) rotate(-20deg); } 50% { transform: translate(4px, 5px) rotate(-20deg); } }
 @keyframes route-walk { to { left: calc(100% - 12px); } }
-@keyframes mascot-hover { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-7px) rotate(2deg); } }
-@keyframes mascot-ping { 0%, 100% { box-shadow: 0 0 0 0 rgba(100, 183, 125, .35); } 60% { box-shadow: 0 0 0 5px rgba(100, 183, 125, 0); } }
 
 @media (max-width: 1050px) {
   .tg-header { padding: 0 28px; }
@@ -372,11 +359,6 @@
   .tg-final-note > button { grid-column: 2; justify-self: start; }
   .tg-final-spark { right: 9px; top: 8px; }
   .tg-footer { min-height: 60px; align-items: flex-start; flex-direction: column; justify-content: center; padding: 13px 0; gap: 7px; }
-  .tg-mascot-dock { right: 9px; bottom: 7px; width: 74px; }
-  .tg-mascot-button { width: 65px; height: 65px; }
-  .tg-mascot-fallback, .tg-mascot-canvas { inset: 9px; width: 47px !important; height: 47px !important; }
-  .tg-mascot-note { bottom: 87px; right: 0; }
-  .tg-mascot-label { padding: 4px 6px; font-size: 6px; }
 }
 
 @keyframes route-walk-vertical { to { top: calc(100% - 12px); } }
