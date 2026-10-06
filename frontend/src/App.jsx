@@ -407,8 +407,7 @@ function App() {
     <div className="tg-app">
       <header className="tg-header">
         <button className="tg-brand" type="button" onClick={goHome} aria-label="TrustGuard AI home">
-          <span className="tg-brand-mark" aria-hidden="true"><ShieldCheck size={21} strokeWidth={2.4} /></span>
-          <span className="tg-brand-copy"><strong>TRUSTGUARD AI</strong><small>PERSONAL SAFETY</small></span>
+          <img className="tg-approved-logo" src="/brand/trustguard-logo.png" alt="TrustGuard AI" width="2172" height="724" />
         </button>
 
         <nav className="tg-nav" aria-label="Main navigation">

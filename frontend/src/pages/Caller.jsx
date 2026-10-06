@@ -699,11 +699,7 @@ function Caller() {
 
       <header className="caller-header">
         <div className="caller-brand">
-          <div className="caller-logo">TG</div>
-          <div>
-            <strong>TrustGuard</strong>
-            <span>SECURE CALL</span>
-          </div>
+          <img className="tg-approved-logo" src="/brand/trustguard-logo.png" alt="TrustGuard AI" width="2172" height="724" />
         </div>
 
         <div

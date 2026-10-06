@@ -154,7 +154,7 @@ export default function MediaAnalysisPage({ onBack }) {
             </button>
           )}
           <div>
-            <p className="ma-brand">TRUSTGUARD AI <span>／ MEDIA LAB</span></p>
+            <img className="tg-approved-logo" src="/brand/trustguard-logo.png" alt="TrustGuard AI" width="2172" height="724" />
             <h1>Media Analysis</h1>
             <p className="ma-subtitle">Inspect an image, audio clip, or video for signals that may need review.</p>
           </div>

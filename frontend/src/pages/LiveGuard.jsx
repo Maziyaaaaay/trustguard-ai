@@ -2994,7 +2994,7 @@ function LiveGuard({ onBack })  {
         <div>
 
           <div className="liveguard-eyebrow">
-            TRUSTGUARD AI
+            <img className="tg-approved-logo" src="/brand/trustguard-logo.png" alt="TrustGuard AI" width="2172" height="724" />
           </div>
 
           <h1>
