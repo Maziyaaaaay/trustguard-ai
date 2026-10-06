@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import urllib.request
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -22,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent
 MODEL_DIR = BASE_DIR / "models"
 MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
-YUNET_MODEL = MODEL_DIR / "face_detection_yunet_2023mar.onnx"
+YUNET_MODEL = MODEL_DIR / "face_detection_yunet_2026may.onnx"
 
 YUNET_URL = (
     "https://github.com/opencv/opencv_zoo/"
@@ -270,20 +271,22 @@ def build_image_variants(
     # Do not let extremely large uploads become too expensive.
     max_dimension = 1800
 
-    scale = min(
-        4.0,
-        max_dimension / max(height, width),
-    )
+    # Upscale small images to help detect small faces, but never enlarge an
+    # already large upload. The old 2x minimum could turn a 25 MP image into
+    # a 100 MP working image and allocate several oversized variants.
+    scale = min(4.0, max_dimension / max(height, width, 1))
+    scale = max(scale, 1.0)
 
-    scale = max(scale, 2.0)
-
-    enlarged = cv2.resize(
-        gray,
-        None,
-        fx=scale,
-        fy=scale,
-        interpolation=cv2.INTER_CUBIC,
-    )
+    if scale > 1.0:
+        enlarged = cv2.resize(
+            gray,
+            None,
+            fx=scale,
+            fy=scale,
+            interpolation=cv2.INTER_CUBIC,
+        )
+    else:
+        enlarged = gray
 
     # Mild denoise
     blurred = cv2.GaussianBlur(
@@ -332,6 +335,12 @@ def build_image_variants(
     ]
 
 
+@lru_cache(maxsize=len(HAAR_FILES))
+def load_haar_classifier(cascade_name: str) -> cv2.CascadeClassifier:
+    cascade_path = os.path.join(cv2.data.haarcascades, cascade_name)
+    return cv2.CascadeClassifier(cascade_path)
+
+
 def detect_with_haar(
     image: np.ndarray,
 ) -> List[Tuple[int, int, int, int, float]]:
@@ -357,17 +366,11 @@ def detect_with_haar(
     image_height, image_width = image.shape[:2]
 
     for cascade_name in HAAR_FILES:
-        cascade_path = os.path.join(
-            cv2.data.haarcascades,
-            cascade_name,
-        )
-
+        cascade_path = os.path.join(cv2.data.haarcascades, cascade_name)
         if not os.path.exists(cascade_path):
             continue
 
-        cascade = cv2.CascadeClassifier(
-            cascade_path
-        )
+        cascade = load_haar_classifier(cascade_name)
 
         if cascade.empty():
             continue
@@ -562,13 +565,27 @@ def detect_faces(
         image.shape[:2]
     )
 
+    max_detection_dimension = 1800
+    scale = min(
+        1.0,
+        max_detection_dimension / max(original_height, original_width, 1),
+    )
+    if scale < 1.0:
+        detection_image = cv2.resize(
+            image,
+            (max(1, int(original_width * scale)), max(1, int(original_height * scale))),
+            interpolation=cv2.INTER_AREA,
+        )
+    else:
+        detection_image = image
+    x_scale = original_width / detection_image.shape[1]
+    y_scale = original_height / detection_image.shape[0]
+
     # --------------------------------------------------------
     # 1. YUNET
     # --------------------------------------------------------
 
-    yunet_faces = detect_with_yunet(
-        image
-    )
+    yunet_faces = detect_with_yunet(detection_image)
 
     if yunet_faces:
         faces = []
@@ -582,10 +599,10 @@ def detect_faces(
         ) in yunet_faces:
             faces.append(
                 {
-                    "x": int(x),
-                    "y": int(y),
-                    "width": int(w),
-                    "height": int(h),
+                    "x": int(round(x * x_scale)),
+                    "y": int(round(y * y_scale)),
+                    "width": int(round(w * x_scale)),
+                    "height": int(round(h * y_scale)),
                     "confidence": round(
                         clamp(
                             confidence * 100.0,
@@ -619,9 +636,7 @@ def detect_faces(
     # 2. HAAR FALLBACK
     # --------------------------------------------------------
 
-    haar_faces = detect_with_haar(
-        image
-    )
+    haar_faces = detect_with_haar(detection_image)
 
     if haar_faces:
         faces = []
@@ -635,10 +650,10 @@ def detect_faces(
         ) in haar_faces:
             faces.append(
                 {
-                    "x": int(x),
-                    "y": int(y),
-                    "width": int(w),
-                    "height": int(h),
+                    "x": int(round(x * x_scale)),
+                    "y": int(round(y * y_scale)),
+                    "width": int(round(w * x_scale)),
+                    "height": int(round(h * y_scale)),
                     "confidence": round(
                         clamp(
                             confidence,

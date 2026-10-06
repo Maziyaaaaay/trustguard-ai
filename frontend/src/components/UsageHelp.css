@@ -1,0 +1,28 @@
+.tg-use-guide { margin: 22px 0; padding: 20px; border: 1px solid #558a7b; border-radius: 16px; color: #e3f8ef; background: #142a32; font-size: 15px; line-height: 1.65; }
+.tg-use-guide summary { cursor: pointer; font-weight: 700; font-size: 17px; }
+.tg-use-guide summary span { float: right; }
+.tg-use-guide li { padding: 7px 0; }
+.tg-use-guide a { color: #86edbe; }
+.tg-use-guide p { color: #c7ded6; }
+.tg-caller-address { overflow-wrap: anywhere; }
+.tg-help-launch { position: fixed; bottom: 20px; right: 20px; z-index: 100; border: 1px solid #73d9ae; border-radius: 999px; padding: 13px 20px; color: #ecfff6; background: #163b37; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 28px #10203030; }
+.tg-help-panel { position: fixed; bottom: 78px; right: 20px; z-index: 100; width: min(390px, calc(100vw - 32px)); max-height: min(680px, calc(100dvh - 100px)); overflow: auto; border: 1px solid #80b5a0; border-radius: 20px; background: #f6fcf8; color: #192d32; box-shadow: 0 20px 70px #101c3040; font: 14px/1.55 system-ui, sans-serif; }
+.tg-help-panel header { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #142a32; color: #f4fff9; }
+.tg-help-panel header strong { font-size: 18px; }
+.tg-help-panel small { display: block; color: #bad9ce; font-size: 12px; }
+.tg-help-panel button { cursor: pointer; }
+.tg-help-panel header button { border: 0; background: transparent; color: white; font-size: 28px; }
+.tg-help-log { max-height: 230px; overflow-y: auto; padding: 12px 16px; }
+.tg-help-log p { margin: 0 0 12px; padding: 12px; border-radius: 12px; background: #e1eee7; }
+.tg-help-log p.user { background: #d9e7f2; margin-left: 35px; }
+.tg-help-log strong { display: block; margin-bottom: 4px; }
+.tg-help-topics { display: flex; flex-wrap: wrap; gap: 7px; padding: 0 16px; }
+.tg-help-topics button { padding: 7px 10px; border-radius: 999px; border: 1px solid #8caf9f; background: white; color: #20493b; font-size: 12px; }
+.tg-help-caller { display: block; margin: 14px 16px; color: #176349; }
+.tg-help-panel form { padding: 0 16px 16px; }
+.tg-help-label { display: block; margin-bottom: 5px; }
+.tg-help-panel form div { display: flex; gap: 8px; }
+.tg-help-panel input { min-width: 0; flex: 1; padding: 10px; border: 1px solid #8caf9f; border-radius: 8px; font: inherit; }
+.tg-help-panel form button { background: #176349; color: white; border: 0; border-radius: 8px; padding: 10px; }
+.tg-help-panel form button:disabled { opacity: .5; cursor: default; }
+.tg-help-panel :focus-visible, .tg-help-launch:focus-visible { outline: 3px solid #54b994; outline-offset: 3px; }

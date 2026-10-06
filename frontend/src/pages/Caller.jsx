@@ -16,6 +16,8 @@ function Caller() {
   const fileVideoTrackRef = useRef(null);
   const objectUrlRef = useRef(null);
   const animationFrameRef = useRef(null);
+  const startCallerRef = useRef(null);
+  const cleanupCallerRef = useRef(null);
 
   const [peerId, setPeerId] = useState("");
   const [connected, setConnected] = useState(false);
@@ -28,12 +30,12 @@ function Caller() {
   const [error, setError] = useState("");
   const [switchingVideo, setSwitchingVideo] = useState(false);
 
-  useEffect(() => {
-    startCaller();
+  startCallerRef.current = startCaller;
+  cleanupCallerRef.current = cleanupCaller;
 
-    return () => {
-      cleanupCaller();
-    };
+  useEffect(() => {
+    startCallerRef.current?.();
+    return () => cleanupCallerRef.current?.();
   }, []);
 
   async function startCaller() {
@@ -697,11 +699,7 @@ function Caller() {
 
       <header className="caller-header">
         <div className="caller-brand">
-          <div className="caller-logo">TG</div>
-          <div>
-            <strong>TrustGuard</strong>
-            <span>SECURE CALL</span>
-          </div>
+          <img className="tg-approved-logo" src="/brand/trustguard-logo.png" alt="TrustGuard AI" width="2172" height="724" />
         </div>
 
         <div
@@ -710,7 +708,7 @@ function Caller() {
           }`}
         >
           <span />
-          {connected ? "CALL SERVICE READY" : "CONNECTING"}
+          {connected ? "CALL SERVICE READY" : status.toUpperCase()}
         </div>
       </header>
 

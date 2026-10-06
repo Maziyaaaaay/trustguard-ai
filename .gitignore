@@ -1,5 +1,7 @@
 ﻿# Python
 backend/.venv/
+.tools/
+.vercel/
 __pycache__/
 *.py[cod]
 
