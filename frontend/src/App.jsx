@@ -1,13 +1,18 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
+  Activity,
   ArrowDown,
+  ArrowLeft,
   ArrowRight,
   ArrowUpRight,
   AudioLines,
   BadgeCheck,
   Banknote,
+  ChartNoAxesCombined,
   Camera,
   Check,
+  ChevronLeft,
+  CircleDollarSign,
   ChevronRight,
   CircleHelp,
   FileVideo2,
@@ -17,12 +22,11 @@ import {
   LockKeyhole,
   MessageCircleWarning,
   Newspaper,
-  Smartphone,
-  CircleDollarSign,
   ScanFace,
   Shield,
   ShieldAlert,
   ShieldCheck,
+  Smartphone,
   Sparkles,
   WalletCards,
 } from "lucide-react";
@@ -163,6 +167,42 @@ function SafeWorldIllustration() {
   );
 }
 
+function SignalScene() {
+  return (
+    <svg className="tg-scene-svg" viewBox="0 0 650 500" role="img" aria-label="Illustration of call, video and audio signals being reviewed around a central trust indicator">
+      <defs><radialGradient id="signal-bg"><stop stopColor="#31496b"/><stop offset="1" stopColor="#17253d"/></radialGradient><linearGradient id="signal-stroke"><stop stopColor="#77e3b9"/><stop offset="1" stopColor="#a996f5"/></linearGradient></defs>
+      <rect width="650" height="500" rx="36" fill="url(#signal-bg)" />
+      <g className="scene-grid"><path d="M0 100H650M0 200H650M0 300H650M0 400H650M130 0V500M260 0V500M390 0V500M520 0V500" /></g>
+      <circle cx="325" cy="245" r="150" className="scene-orbit orbit-a"/><circle cx="325" cy="245" r="112" className="scene-orbit orbit-b"/>
+      <g className="scene-center"><path d="M325 147l72 27v58c0 54-36 89-72 110-36-21-72-56-72-110v-58z" fill="#123c45" stroke="#80e0bd" strokeWidth="3"/><path d="m294 229 21 21 43-48" fill="none" stroke="#95f0c7" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/><text x="325" y="283" textAnchor="middle" className="scene-label">SIGNAL REVIEW</text></g>
+      <g className="scene-node node-call"><rect x="48" y="93" width="146" height="94" rx="18"/><circle cx="83" cy="128" r="17"/><path d="M76 128h14m-7-7v14"/><text x="108" y="126">CALL</text><text x="108" y="147" className="scene-sub">movement cue</text></g>
+      <g className="scene-node node-media"><rect x="452" y="92" width="151" height="94" rx="18"/><rect x="474" y="113" width="43" height="40" rx="8"/><path d="m491 123 14 9-14 9z"/><text x="527" y="126">MEDIA</text><text x="527" y="147" className="scene-sub">frame signals</text></g>
+      <g className="scene-node node-audio"><rect x="68" y="343" width="166" height="86" rx="18"/><path d="M89 387h8l7-17 9 34 9-26 7 9h13"/><text x="151" y="380">AUDIO</text><text x="151" y="401" className="scene-sub">acoustic clues</text></g>
+      <g className="scene-node node-context"><rect x="412" y="343" width="188" height="86" rx="18"/><circle cx="439" cy="386" r="12"/><path d="M434 386h10m-5-5v10"/><text x="462" y="380">CONTEXT</text><text x="462" y="401" className="scene-sub">review, then verify</text></g>
+      <path className="scene-connection" d="M194 155 253 197M452 155 397 197M234 373l52-50m126 50-52-50"/><circle cx="325" cy="245" r="188" className="scene-scan"/>
+      <text x="325" y="470" textAnchor="middle" className="scene-caption">HEURISTIC SIGNALS · NOT A VERDICT</text>
+    </svg>
+  );
+}
+
+function NetworkScene() {
+  return (
+    <svg className="tg-scene-svg" viewBox="0 0 650 500" role="img" aria-label="Illustration mapping suspicious messages, a bank account, an APK and an external identity into a fraud-risk network">
+      <defs><radialGradient id="network-bg"><stop stopColor="#293e60"/><stop offset="1" stopColor="#152239"/></radialGradient></defs>
+      <rect width="650" height="500" rx="36" fill="url(#network-bg)" />
+      <g className="scene-grid"><path d="M0 100H650M0 200H650M0 300H650M0 400H650M130 0V500M260 0V500M390 0V500M520 0V500" /></g>
+      <g className="network-links"><path d="M132 133 290 219M520 128 356 218M159 370 286 289M504 369 358 286"/><path d="M130 133 520 128M159 370 504 369" className="network-dash"/></g>
+      <g className="network-core"><circle cx="324" cy="251" r="70"/><circle cx="324" cy="251" r="53"/><path d="M324 207 355 219v25c0 24-15 39-31 49-16-10-31-25-31-49v-25z"/><path d="m311 245 10 10 19-22"/></g>
+      <g className="network-node"><circle cx="132" cy="133" r="45"/><text x="132" y="127" textAnchor="middle">SMS</text><text x="132" y="145" textAnchor="middle" className="scene-sub">urgent link</text></g>
+      <g className="network-node node-purple"><circle cx="520" cy="128" r="45"/><text x="520" y="124" textAnchor="middle">APK</text><text x="520" y="143" textAnchor="middle" className="scene-sub">unknown app</text></g>
+      <g className="network-node node-amber"><circle cx="159" cy="370" r="45"/><text x="159" y="365" textAnchor="middle">BANK</text><text x="159" y="384" textAnchor="middle" className="scene-sub">account trail</text></g>
+      <g className="network-node node-blue"><circle cx="504" cy="369" r="45"/><text x="504" y="365" textAnchor="middle">CALL</text><text x="504" y="384" textAnchor="middle" className="scene-sub">false identity</text></g>
+      <text x="325" y="466" textAnchor="middle" className="scene-caption">CONNECT THE CLUES · VERIFY OUT OF BAND</text>
+      <circle cx="132" cy="133" r="56" className="network-pulse"/><circle cx="520" cy="128" r="56" className="network-pulse pulse-delay"/>
+    </svg>
+  );
+}
+
 function useRevealOnScroll(activePage) {
   useEffect(() => {
     if (activePage !== "home") return undefined;
@@ -240,43 +280,64 @@ function FraudActivitySnapshot() {
           <a href="https://www.pib.gov.in/PressReleasePage.aspx?PRID=2287039&lang=1&reg=48" target="_blank" rel="noopener noreferrer">Source: Ministry of Home Affairs / PIB, 21 July 2026 <ArrowUpRight size={13} /></a>
         </div>
       </div>
+      <div className="tg-research-charts">
+        <article className="tg-research-chart tg-trend-chart" data-reveal>
+          <div className="tg-research-chart-heading"><span className="tg-research-icon"><Activity size={17} /></span><div><small>NCRB · REGISTERED CASES</small><h3>Cybercrime cases kept climbing</h3></div><span className="tg-data-period">2020—2024</span></div>
+          <svg className="tg-trend-svg" viewBox="0 0 600 235" role="img" aria-label="NCRB cybercrime cases registered: 50,035 in 2020; 52,974 in 2021; 65,893 in 2022; 86,420 in 2023; 101,928 in 2024">
+            <defs><linearGradient id="trend-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#2eb48a" stopOpacity=".24"/><stop offset="1" stopColor="#2eb48a" stopOpacity="0"/></linearGradient></defs>
+            <path d="M54 32H574M54 77H574M54 122H574M54 167H574" className="chart-gridline" />
+            <path d="M54 167 L184 160 L314 131 L444 82 L574 32 L574 167 Z" fill="url(#trend-fill)" />
+            <path d="M54 167 L184 160 L314 131 L444 82 L574 32" className="trend-line" />
+            {[{x:54,y:167,val:"50,035",year:"2020"},{x:184,y:160,val:"52,974",year:"2021"},{x:314,y:131,val:"65,893",year:"2022"},{x:444,y:82,val:"86,420",year:"2023"},{x:574,y:32,val:"101,928",year:"2024"}].map((point) => <g key={point.year}><circle cx={point.x} cy={point.y} r="5" className="trend-point"/><text x={point.x} y={point.y - 13} textAnchor="middle" className="trend-value">{point.val}</text><text x={point.x} y="195" textAnchor="middle" className="trend-year">{point.year}</text></g>)}
+          </svg>
+          <p className="tg-research-foot">Cases registered under cybercrime, all categories—not financial-fraud complaints alone. Source: NCRB data published by MHA / PIB, 21 July 2026.</p>
+        </article>
+        <article className="tg-research-chart tg-loss-chart" data-reveal data-reveal-delay="1">
+          <div className="tg-research-chart-heading"><span className="tg-research-icon pie-icon"><ChartNoAxesCombined size={17} /></span><div><small>2025 · REPORTED LOSS MIX</small><h3>Investment scams took the largest share</h3></div></div>
+          <div className="tg-pie-layout"><div className="tg-pie-graphic" role="img" aria-label="76 percent of reported financial cyber-fraud losses in a speaker-cited 2025 estimate were attributed to fake investment and trading scams"><span><strong>76%</strong><small>reported loss</small></span></div><div className="tg-pie-legend"><span><i className="pie-investment"/><b>76%</b> Fake investment & trading scams</span><span><i className="pie-other"/><b>24%</b> Other reported categories*</span><small>*Remaining share, calculated as 100% minus 76%. Figures cited by a cybersecurity speaker at a PIB workshop; not an NCRP category breakdown.</small></div></div>
+          <a className="tg-research-source" href="https://www.pib.gov.in/PressReleasePage.aspx?PRID=2301973&lang=2&reg=48" target="_blank" rel="noopener noreferrer">Source: PIB Cyber Suraksha workshop, 21 August 2026 <ArrowUpRight size={13} /></a>
+        </article>
+      </div>
     </section>
   );
 }
 
 const fieldNotes = [
   {
-    number: "01", category: "IMPERSONATION · LIVE CALLS", title: "The call that becomes a ‘digital arrest’",
-    date: "14 MAY 2024", source: "Ministry of Home Affairs · PIB",
-    summary: "A caller claims to be police, CBI, or another authority, invents a parcel or criminal case, then uses threats and a video call to keep the target under pressure.",
-    action: "Hang up. Contact the agency through a number you find independently; never transfer money to ‘prove’ your innocence.",
-    href: "https://www.pib.gov.in/Pressreleaseshare.aspx?PRID=2020570&lang=2&reg=48", icon: ShieldAlert, tone: "arrest",
+    number: "01", category: "DIGITAL ARREST · KASARAGOD", title: "An 11-day video-call ordeal and a ₹2.4 crore loss",
+    date: "27 AUG 2025", source: "Onmanorama · Special report", masthead: "ONMANORAMA",
+    summary: "A retired Kerala couple were isolated on continuous video calls by people impersonating officials. They transferred ₹2.4 crore before a family member recognized the scam.",
+    action: "Real authorities do not conduct arrests over video calls or demand transfers for ‘verification’. Call someone you trust using another phone.",
+    href: "https://www.onmanorama.com/news/kerala/2025/08/27/retired-kerala-couple-battling-cancer-endured-11-days-digital-arrest-lost-2-4-crore.html", icon: ShieldAlert, tone: "arrest",
   },
   {
-    number: "02", category: "MONEY MULES · BANKING", title: "The ‘easy commission’ that rents your account",
-    date: "28 OCT 2024", source: "Indian Cyber Crime Coordination Centre · PIB",
-    summary: "Fraudsters recruit people to receive and forward funds through their bank accounts, sometimes promising a cut. The account holder can become part of an illegal money trail.",
-    action: "Never lend or rent your account, card, or credentials. If you already shared access, contact your bank and report it promptly.",
-    href: "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2069000&lang=2&reg=3", icon: CircleDollarSign, tone: "mule",
+    number: "02", category: "MONEY MULES · KASARAGOD", title: "Police book 26 in bank-account rental cases",
+    date: "09 SEP 2026", source: "Onmanorama · Kerala", masthead: "ONMANORAMA",
+    summary: "A Kasaragod police investigation described accounts allegedly used to route cyber-fraud funds. One account holder reportedly received a small commission while larger sums passed through the account.",
+    action: "Do not give anyone your bank login, card, cheque book, or account access in exchange for a fee.",
+    href: "https://www.onmanorama.com/news/kerala/2026/09/09/rent-out-your-bank-account-land-in-a-cybercrime-case-kasaragod-police-book-26.html", icon: CircleDollarSign, tone: "mule",
   },
   {
-    number: "03", category: "MALICIOUS APK · SMS BAIT", title: "A fake challan with a dangerous attachment",
-    date: "17 MAR 2026", source: "CERT-In · Security Advisory",
-    summary: "A traffic-fine message can be the lure for a malicious Android app. Installing an APK from an unsolicited message may expose financial information or enable unauthorized activity.",
-    action: "Do not install APKs from SMS or chat links. Check a challan using the official transport portal or app store listing.",
-    href: "https://www.cert-in.org.in/s2cMainServlet?CACODE=CICA-2026-3492&pageid=PUBADV01", icon: Smartphone, tone: "apk",
+    number: "03", category: "FAKE BANK APP · MALICIOUS APK", title: "A fake banking app drained ₹4 lakh",
+    date: "13 JUL 2025", source: "The New Indian Express · Kochi", masthead: "THE NEW INDIAN EXPRESS",
+    summary: "Police said a Kozhikode resident followed a text-message link to install a fake banking APK. The app included a screen-sharing tool used to access banking details.",
+    action: "Never install a banking app from a text or chat link. Find your bank’s app in its official app-store listing.",
+    href: "https://www.newindianexpress.com/cities/kochi/2025/Jul/13/kerala-man-loses-rs-4-lakh-in-fake-banking-app-fraud", icon: Smartphone, tone: "apk",
   },
 ];
 
 function ScamFieldNotes() {
+  const railRef = useRef(null);
+  const nudgeRail = (direction) => railRef.current?.scrollBy({ left: direction * 360, behavior: "smooth" });
+
   return (
     <section className="tg-field-notes" id="field-notes" aria-labelledby="field-notes-heading">
       <div className="tg-field-orb field-orb-one" aria-hidden="true" />
       <div className="tg-field-orb field-orb-two" aria-hidden="true" />
       <div className="tg-field-inner">
         <div className="tg-field-heading" data-reveal>
-          <div><p className="tg-eyebrow"><Newspaper size={14} /> THE TRUSTGUARD FIELD DESK</p><h2 id="field-notes-heading">Scams change shape.<br /><em>Know the pattern.</em></h2></div>
-          <p>Original, practical explainers based on official Indian cyber-safety advisories. These are curated field notes, not a live news feed.</p>
+          <div><p className="tg-eyebrow"><Newspaper size={14} /> THE TRUSTGUARD FIELD DESK</p><h2 id="field-notes-heading">Real reports.<br /><em>Patterns to notice.</em></h2></div>
+          <p>Source-linked newspaper reports from Kerala, presented as clipping-style summaries. Open each publication to read its full article.</p>
         </div>
         <article className="tg-news-clipping" data-reveal>
           <div className="tg-clipping-paper">
@@ -288,19 +349,24 @@ function ScamFieldNotes() {
           </div>
           <div className="tg-clipping-caption"><Newspaper size={17} /><span><strong>From the original report</strong><small>Newspaper clipping-inspired layout with a source-linked summary. Open the publication for the full story.</small></span><a href="https://www.onmanorama.com/news/kerala/2026/01/04/ex-serviceman-busts-fraud-virtual-arrest-scam-palakkad.amp.html" target="_blank" rel="noopener noreferrer">READ ORIGINAL <ArrowUpRight size={14} /></a></div>
         </article>
-        <div className="tg-field-grid">
-          {fieldNotes.map(({ number, category, title, date, source, summary, action, href, icon: Icon, tone }, index) => (
-            <article className={`tg-field-card field-${tone}`} key={number} data-reveal data-reveal-delay={index ? "1" : undefined}>
-              <div className="tg-field-card-top"><span className="tg-field-number">{number} / 03</span><span className="tg-field-icon"><Icon size={19} /></span></div>
-              <p className="tg-field-category">{category}</p>
-              <h3>{title}</h3>
-              <p className="tg-field-summary">{summary}</p>
-              <div className="tg-field-action"><strong>TAKE A BEAT</strong><p>{action}</p></div>
-              <footer><span><b>{date}</b><small>{source}</small></span><a href={href} target="_blank" rel="noopener noreferrer" aria-label={`Read the official ${source} source for ${title}`}>SOURCE <ArrowUpRight size={14} /></a></footer>
+        <div className="tg-clipping-toolbar"><span><i /> SWIPE TO BROWSE <b>01 — 03</b></span><div><button type="button" aria-label="Scroll newspaper reports left" onClick={() => nudgeRail(-1)}><ArrowLeft size={16} /></button><button type="button" aria-label="Scroll newspaper reports right" onClick={() => nudgeRail(1)}><ArrowRight size={16} /></button></div></div>
+        <div className="tg-clipping-rail" ref={railRef} aria-label="Newspaper reports about cyber fraud">
+          {fieldNotes.map(({ number, category, title, date, source, masthead, summary, action, href, icon: Icon, tone }) => (
+            <article className={`tg-press-cutting field-${tone}`} key={number} data-reveal="stop">
+              <div className="tg-press-sheet">
+                <div className="tg-press-masthead"><span>{masthead}</span><small>{date}</small></div>
+                <p className="tg-press-category"><Icon size={13} /> {category}</p>
+                <h3>{title}</h3>
+                <p className="tg-press-summary">{summary}</p>
+                <div className="tg-press-rule" />
+                <div className="tg-press-action"><b>WHAT TO NOTICE</b><p>{action}</p></div>
+                <footer><span>{source}</span><a href={href} target="_blank" rel="noopener noreferrer" aria-label={`Read the original report from ${source}: ${title}`}>ORIGINAL REPORT <ArrowUpRight size={13} /></a></footer>
+              </div>
+              <span className="tg-press-index">{number} <i>/ 03</i></span>
             </article>
           ))}
         </div>
-        <p className="tg-field-disclaimer">Each note summarizes the linked advisory in our own words. Verify urgent claims with the relevant institution. TrustGuard’s own scores are prototype risk indicators, not a verdict.</p>
+        <p className="tg-field-disclaimer">These are editorial summaries of the linked reporting, not TrustGuard detections. If you have transferred money in India, contact your bank and call cyber-fraud helpline 1930 promptly.</p>
       </div>
     </section>
   );
@@ -309,6 +375,7 @@ function ScamFieldNotes() {
 function App() {
   const [activePage, setActivePage] = useState("home");
   const [activeSignal, setActiveSignal] = useState("calls");
+  const [visualScene, setVisualScene] = useState(0);
   useRevealOnScroll(activePage);
 
   const goHome = () => {
@@ -368,9 +435,11 @@ function App() {
           </div>
 
           <div className="tg-hero-art-wrap" data-reveal data-reveal-delay="1" onPointerMove={moveIllustration} onPointerLeave={resetIllustration}>
-            <div className="tg-art-caption"><span><i /> SAFETY, IN MOTION</span><span>01 / 03</span></div>
-            <div className="tg-hero-art"><SafeWorldIllustration /></div>
-            <div className="tg-art-footnote"><span className="tg-mini-shield"><Shield size={13} /></span> A second look can change everything <Sparkles size={13} /></div>
+            <div className="tg-art-caption"><span><i /> {visualScene === 0 ? "SAFETY, IN MOTION" : visualScene === 1 ? "SIGNALS, WITH CONTEXT" : "SCAM PATTERN MAP"}</span><div className="tg-scene-controls"><button type="button" aria-label="Previous safety visual" onClick={() => setVisualScene((visualScene + 2) % 3)}><ChevronLeft size={15} /></button><span>0{visualScene + 1} / 03</span><button type="button" aria-label="Next safety visual" onClick={() => setVisualScene((visualScene + 1) % 3)}><ChevronRight size={15} /></button></div></div>
+            <div className="tg-hero-art" key={visualScene}>
+              {visualScene === 0 ? <SafeWorldIllustration /> : visualScene === 1 ? <SignalScene /> : <NetworkScene />}
+            </div>
+            <div className="tg-art-footnote"><span className="tg-mini-shield"><Shield size={13} /></span>{visualScene === 0 ? "A second look can change everything" : visualScene === 1 ? "Review the clues. No single signal decides." : "Spot the pattern. Verify through another channel."}<span className="tg-scene-dots" aria-label="Choose a safety illustration">{[0, 1, 2].map((scene) => <button key={scene} type="button" className={visualScene === scene ? "active" : ""} aria-label={`Show safety visual ${scene + 1}`} aria-pressed={visualScene === scene} onClick={() => setVisualScene(scene)} />)}</span></div>
           </div>
           <a className="tg-scroll-cue" href="#check-signal" aria-label="Scroll down to choose a signal to check"><span /> SCROLL TO EXPLORE <ArrowDown size={13} /></a>
         </section>
