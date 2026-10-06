@@ -1,0 +1,530 @@
+.tg-native-file-input {
+  width: min(100%, 420px);
+  max-width: 100%;
+  padding: 12px;
+  border: 1px solid rgba(120, 135, 155, 0.25);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  cursor: pointer;
+}
+
+.tg-native-file-input::file-selector-button {
+  margin-right: 12px;
+  padding: 9px 14px;
+  border: 1px solid rgba(120, 135, 155, 0.25);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  cursor: pointer;
+}
+
+.liveguard-page {
+  min-height: 100vh;
+  padding: 28px;
+  background:
+    radial-gradient(circle at top right, rgba(62, 76, 110, 0.14), transparent 28%),
+    #070b12;
+  color: #eef3f8;
+}
+
+.liveguard-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.liveguard-eyebrow,
+.card-label {
+  color: #78879a;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.liveguard-header h1 {
+  margin: 6px 0 4px;
+  font-size: 32px;
+  letter-spacing: -0.03em;
+}
+
+.liveguard-header p {
+  margin: 0;
+  color: #8592a3;
+  font-size: 14px;
+}
+
+.service-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid #263241;
+  border-radius: 999px;
+  background: #0d141e;
+  color: #9aa8b8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #7f8b99;
+}
+
+.service-badge.ready .status-dot {
+  background: #44ff9a;
+  box-shadow: 0 0 12px rgba(68, 255, 154, 0.7);
+}
+
+.service-badge.error .status-dot {
+  background: #ff4d6d;
+}
+
+.liveguard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(320px, 0.75fr);
+  gap: 18px;
+}
+
+.video-card,
+.analysis-card,
+.connection-card,
+.roadmap-card {
+  border: 1px solid #202a37;
+  background: rgba(11, 17, 26, 0.92);
+  border-radius: 20px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+}
+
+.video-card {
+  overflow: hidden;
+}
+
+.card-header,
+.analysis-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  padding: 18px 20px;
+}
+
+.card-header h2,
+.analysis-title-row h2 {
+  margin: 6px 0 0;
+  font-size: 18px;
+}
+
+.connection-state {
+  color: #78879a;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.remote-video-wrapper {
+  position: relative;
+  overflow: hidden;
+  min-height: 480px;
+  background: #03070b;
+}
+
+.remote-video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 480px;
+  object-fit: contain;
+  background: #03070b;
+}
+
+.face-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.video-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  color: #94a1b2;
+  text-align: center;
+  padding: 30px;
+}
+
+.video-placeholder strong {
+  color: #e7edf4;
+  font-size: 18px;
+}
+
+.video-placeholder span {
+  max-width: 340px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.placeholder-icon {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid #2b3746;
+  color: #657487;
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.video-live-tag {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 11px;
+  border-radius: 8px;
+  background: rgba(5, 10, 15, 0.78);
+  border: 1px solid #263342;
+  backdrop-filter: blur(8px);
+  color: #e7edf4;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.video-live-tag span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #44ff9a;
+}
+
+.video-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 18px;
+  border-top: 1px solid #1f2935;
+  color: #778699;
+  font-size: 12px;
+}
+
+.danger-button,
+.small-button,
+.connect-button {
+  border: 0;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.danger-button {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #2a1017;
+  border: 1px solid #54212c;
+  color: #ff728a;
+  font-size: 11px;
+}
+
+.analysis-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.analysis-card,
+.connection-card {
+  padding-bottom: 18px;
+  overflow: hidden;
+}
+
+.analysis-status {
+  margin: 0 20px 16px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  background: #0d141e;
+  border: 1px solid #202c39;
+  color: #8f9dae;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.analysis-pulse {
+  padding: 6px 9px;
+  border-radius: 7px;
+  background: #0d2318;
+  color: #44ff9a;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.metric-list {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid #1d2631;
+  border-bottom: 1px solid #1d2631;
+}
+
+.metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #1d2631;
+}
+
+.metric:last-child {
+  border-bottom: 0;
+}
+
+.metric span {
+  color: #78879a;
+  font-size: 12px;
+}
+
+.metric strong {
+  color: #eaf0f6;
+  font-size: 12px;
+}
+
+.risk-preview {
+  margin: 16px 20px 0;
+  padding: 15px;
+  background: #0b121a;
+  border: 1px solid #202b38;
+  border-radius: 12px;
+}
+
+.risk-preview div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.risk-preview span {
+  color: #718095;
+  font-size: 11px;
+}
+
+.risk-preview strong {
+  color: #44ff9a;
+  font-size: 11px;
+}
+
+.risk-preview p {
+  margin: 9px 0 0;
+  color: #8996a6;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.connection-card {
+  padding: 18px;
+}
+
+.id-block {
+  margin-top: 14px;
+}
+
+.id-block > span,
+.input-label {
+  display: block;
+  margin-bottom: 7px;
+  color: #718095;
+  font-size: 11px;
+}
+
+.id-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.id-row code {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 10px 11px;
+  border-radius: 8px;
+  background: #080d14;
+  border: 1px solid #202b38;
+  color: #a8b4c2;
+  font-size: 10px;
+}
+
+.small-button {
+  padding: 10px 11px;
+  border-radius: 8px;
+  background: #121b26;
+  border: 1px solid #263240;
+  color: #c0cad6;
+  font-size: 10px;
+}
+
+.small-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.input-label {
+  margin-top: 17px;
+}
+
+.caller-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  border-radius: 9px;
+  border: 1px solid #263240;
+  background: #080d14;
+  color: #edf2f7;
+  outline: none;
+  font-size: 12px;
+}
+
+.caller-input:focus {
+  border-color: #3b4a5d;
+}
+
+.caller-input::placeholder {
+  color: #536173;
+}
+
+.connect-button {
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 9px;
+  background: #e9eef5;
+  color: #080d14;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.connect-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.call-status {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #7f8d9d;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.status-good {
+  color: #44ff9a;
+}
+
+.status-neutral {
+  color: #69788a;
+}
+
+.liveguard-message {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #3e2a31;
+  background: #171015;
+  color: #ff879a;
+  font-size: 12px;
+}
+
+.roadmap-card {
+  margin-top: 18px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.roadmap-card h3 {
+  margin: 6px 0 0;
+  font-size: 15px;
+}
+
+.roadmap-items {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.roadmap-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #202c39;
+  background: #0a1018;
+  color: #68778a;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.roadmap-item span {
+  color: #4e5b6c;
+}
+
+.roadmap-item.active {
+  border-color: #28523b;
+  color: #44ff9a;
+  background: #0b1711;
+}
+
+.roadmap-item.active span {
+  color: #44ff9a;
+}
+
+@media (max-width: 1100px) {
+  .liveguard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .roadmap-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 700px) {
+  .liveguard-page {
+    padding: 16px;
+  }
+
+  .liveguard-header {
+    flex-direction: column;
+  }
+
+  .remote-video-wrapper,
+  .remote-video {
+    min-height: 300px;
+  }
+}
