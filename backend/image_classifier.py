@@ -26,7 +26,7 @@ def classify_image(image):
         evidence["gps_present"] = 34853 in exif
     except Exception:
         pass
-    base = {"model": MODEL_NAME, "revision": MODEL_REVISION, "metadata_evidence": evidence,
+    base = {"model": MODEL_NAME, "revision": MODEL_REVISION, "metadata_evidence": {key: value for key, value in evidence.items() if key != "gps_present"},
             "limitations": "Experimental pretrained classifier. Model scores are not calibrated probabilities; edits, compression and unseen generators can cause errors. Metadata is editable and does not prove authenticity."}
     try:
         rgb = ImageOps.exif_transpose(image).convert("RGB").resize((224, 224), Image.Resampling.BILINEAR)

@@ -13,6 +13,7 @@ const MAX_UPLOAD_BYTES = import.meta.env.PROD
 const MAX_UPLOAD_LABEL = import.meta.env.PROD ? "4 MB" : "50 MB";
 
 const SIGNAL_LABELS = {
+  ai_image_indicator: "Pretrained AI image indication",
   synthetic_voice: "Acoustic anomaly (not a voice-clone detector)",
   face_manipulation: "Face-track instability",
   media_manipulation: "Frame and media anomalies",
@@ -90,14 +91,13 @@ function ImageAssessment({ detection }) {
       {detection.available ? (
         <>
           <p>AI class model score: <strong>{detection.synthetic_model_score}/100</strong></p>
-          <p>Scores of 80 or above indicate likely AI generation; 20 or below indicate likely photographic content. The middle band needs review. These thresholds are provisional, and the score is not a calibrated probability or fraud score.</p>
+          <p>The risk bands above match Live Guard. The classifier assessment uses a conservative uncertainty band; neither result proves that an image is real or fake.</p>
         </>
       ) : <p>{detection.error || "The classifier could not run. Try again later."}</p>}
       <h4>Camera evidence in this file</h4>
       <dl>
         <div><dt>Camera metadata</dt><dd>{evidence.camera || "Not present"}</dd></div>
         <div><dt>Recorded capture time</dt><dd>{evidence.capture_time || "Not present"}</dd></div>
-        <div><dt>Location metadata</dt><dd>{evidence.gps_present ? "Present · coordinates hidden" : "Not present"}</dd></div>
       </dl>
       <p>Metadata can be edited or stripped. Its presence supports a camera-origin explanation; its absence does not mean an image is AI-generated.</p>
       <p>{detection.limitations}</p>
@@ -172,7 +172,9 @@ export default function MediaAnalysisPage({ onBack }) {
   const scoreValue = Number(result?.risk?.score ?? result?.risk_score ?? 0);
   const score = Math.max(0, Math.min(100, Math.round(Number.isFinite(scoreValue) ? scoreValue : 0)));
   const level = riskLevel(score);
-  const qualityOnly = result?.risk?.scope === "media_quality" || kind === "image" || kind === "audio";
+  const qualityOnly = result?.risk?.scope === "media_quality" || kind === "audio";
+  const imageAssessed = kind === "image" && result?.image_detection?.available;
+  const bandLabel = level === "HIGH" ? "HIGH RISK · VERIFY SOURCE" : level === "MEDIUM" ? "MODERATE RISK · REVIEW" : "LOW RISK · FEWER AI INDICATIONS";
   const signals = Object.entries(result?.signals || {}).filter(
     ([, value]) => typeof value === "number" && Number.isFinite(value)
   );
@@ -282,18 +284,21 @@ export default function MediaAnalysisPage({ onBack }) {
             </div>
           ) : result ? (
             <div className="ma-result-content">
-              {kind === "image" && <ImageAssessment detection={result.image_detection} />}
-              <div className={`ma-score-card ${!qualityOnly && level === "HIGH" ? "high" : "medium"}`}>
+              <div className={`ma-score-card ${level === "HIGH" ? "high" : level === "MEDIUM" ? "medium" : "low"}`}>
                 <div className="ma-score-ring" style={{ "--score": `${score}%` }}>
                   <span>{score}<small>/100</small></span>
                 </div>
                 <div className="ma-score-copy">
-                  <span className="ma-kicker">{result.media_type || kind.toUpperCase()} {qualityOnly ? "QUALITY" : "ANOMALY"} SCORE · AUTHENTICITY UNVERIFIED</span>
-                  <strong>{!qualityOnly && level === "HIGH" ? "HIGH RISK · VERIFY SOURCE" : "AUTHENTICITY UNVERIFIED"}</strong>
+                  <span className="ma-kicker">{result.media_type || kind.toUpperCase()} {imageAssessed ? "AI INDICATION" : qualityOnly ? "QUALITY" : "ANOMALY"} SCORE</span>
+                  <strong>{imageAssessed || !qualityOnly ? bandLabel : "QUALITY CHECK · AI DETECTOR UNAVAILABLE"}</strong>
                   <p>{result.summary || "Review the signals below with the original file."}</p>
-                  <p>{result.image_detection?.available ? "This quality score is separate from the AI image assessment above." : "AI detection is unavailable for this file."} This score cannot classify the file as real, AI-generated, or fraudulent.</p>
+                  <p>{imageAssessed ? "AI assessment is available. This model score can be wrong; it is not a probability or a fraud verdict." : "This quality or anomaly score cannot establish whether the file is real, AI-generated, or fraudulent."}</p>
                 </div>
               </div>
+
+              <div className="ma-risk-bands" aria-label="Risk score bands"><span>0–29 · Low</span><span>30–50 · Review</span><span>51–100 · High</span></div>
+
+              {kind === "image" && <ImageAssessment detection={result.image_detection} />}
 
               {kind === "audio" && result.audio_forensics && (
                 <section className="ma-video-checks" aria-label="Audio analysis details">

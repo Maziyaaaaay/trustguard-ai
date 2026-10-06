@@ -138,3 +138,9 @@
 .ma-image-assessment dl div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 9px 0; border-bottom: 1px solid #d8e2d9; }
 .ma-image-assessment dt { color: #526457; }
 .ma-image-assessment dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+
+.ma-score-copy > .ma-kicker { display: block; margin-bottom: 8px; line-height: 1.5; }
+.ma-risk-bands { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 13px; font-weight: 650; }
+.ma-risk-bands span { padding: 12px 6px; text-align: center; border-radius: 8px; background: #e4f4eb; color: #246349; }
+.ma-risk-bands span:nth-child(2) { background: #fff3d9; color: #7d5b18; }
+.ma-risk-bands span:nth-child(3) { background: #fde7e2; color: #983d35; }

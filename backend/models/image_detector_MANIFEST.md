@@ -16,8 +16,8 @@ Softmax score is not calibrated as probability. Provisional conservative thresho
 >=80 likely AI-generated; <=20 likely photographic; otherwise inconclusive.
 Not a fraud, identity or factual-truth detector. Metadata does not change its score.
 No photo is sent to Hugging Face or an external detector. Model weights are bundled.
-Location evidence only indicates GPS metadata presence; coordinates are not displayed.
-Image quality/recompression score remains separate.
+Location metadata remains internal. Neither GPS presence nor raw EXIF is returned in image API results. It does not automatically change the model score.
+Image quality/recompression score remains separate. The primary image risk score uses the rounded AI class score and Live Guard bands: 0–29 low, 30–50 review, 51–100 high. These policy bands do not alter the classifier uncertainty thresholds or improve accuracy.
 
 ## Evaluation limitations
 

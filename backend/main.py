@@ -3761,6 +3761,8 @@ def analyze_image_media(content: bytes, filename: str, content_type: str) -> Dic
         ocr = perform_ocr(image)
         image_detection = classify_image(image)
         metadata_result = analyze_metadata(metadata, filename, False)
+        # Raw EXIF may contain private location data; keep it out of API results.
+        metadata_result.pop("raw", None)
         # Document OCR, editor metadata and absence of faces are not evidence
         # that an ordinary photograph was AI-generated.
         combined_score = clamp_score(
@@ -3864,6 +3866,17 @@ async def _analyze_media(file: UploadFile):
 
     risk_score = clamp_score(result.get("risk", 0))
     signals = result.get("signals", {})
+    image_detection = result.get("image_detection") or {}
+    image_assessed = kind == "image" and image_detection.get("available", False)
+    if image_assessed:
+        risk_score = clamp_score(image_detection["synthetic_model_score"])
+        signals = {"ai_image_indicator": risk_score, **signals}
+    image_level = get_risk_level(risk_score)
+    image_summary = {
+        "LOW": "Low AI indication. The detector leans toward photographic content; this does not prove authenticity.",
+        "MEDIUM": "Moderate AI indication. Review the source and original file before deciding.",
+        "HIGH": "High AI indication. Verify the source; the model can falsely flag real photographs.",
+    }[image_level]
 
     if not signals:
         signals = {
@@ -3887,11 +3900,11 @@ async def _analyze_media(file: UploadFile):
         "media_type": result.get("media_type", kind.upper()),
         "risk": {
             "score": risk_score,
-            "level": get_risk_level(risk_score) if kind == "video" else "UNVERIFIED",
-            "scope": "temporal_anomalies" if kind == "video" else "media_quality",
+            "level": get_risk_level(risk_score) if kind == "video" or image_assessed else "UNVERIFIED",
+            "scope": "ai_image_indicator" if image_assessed else "temporal_anomalies" if kind == "video" else "media_quality",
         },
         "authenticity": {
-            "status": "unverified",
+            "status": "assessed" if image_assessed else "unverified",
             "ai_detection_available": bool(result.get("image_detection", {}).get("available")),
             "method": "local_pretrained_image_classifier" if result.get("image_detection", {}).get("available") else "signal_heuristics",
             "message": "Image classification is an experimental assessment, not proof of authenticity. A low quality anomaly score does not establish that media is real or safe.",
@@ -3907,11 +3920,13 @@ async def _analyze_media(file: UploadFile):
         "image_detection": result.get("image_detection"),
         "findings": result.get("findings", []),
         "summary": (
-            "Authenticity unverified. Few anomalies were found by basic signal checks; AI-generated media can pass these checks."
-            if risk_score < 30
-            else "Quality or temporal anomalies warrant review. These do not establish AI generation or fraud."
+            image_summary if image_assessed else (
+                "Authenticity unverified. Few anomalies were found by basic signal checks; AI-generated media can pass these checks."
+                if risk_score < 30 else "Quality or temporal anomalies warrant review. These do not establish AI generation or fraud."
+            )
         ),
         "recommendation": (
+            "Obtain the original image and verify its source independently. Treat the detector assessment as a review aid, not proof." if image_assessed else
             build_recommendation("HIGH") if kind == "video" and risk_score > 50 else
             "Verify the source and obtain independent evidence before acting. AI generation and authenticity remain unverified."
         ),
