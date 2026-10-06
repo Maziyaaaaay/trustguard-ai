@@ -64,11 +64,11 @@ function distance(a, b) {
 }
 
 function getRiskLevel(score) {
-  if (score >= 75) {
+  if (score > 50) {
     return "HIGH";
   }
 
-  if (score >= 45) {
+  if (score >= 30) {
     return "MEDIUM";
   }
 
@@ -76,12 +76,10 @@ function getRiskLevel(score) {
 }
 
 /*
- * Fuse only signals that are available. Missing signals are omitted and the
- * remaining weights are normalized. `videoModelRisk` must come from a real,
- * validated video classifier; it is null in the current Live Guard build.
+ * Fuse measured signals using the documented project weights. Missing
+ * optional inputs are omitted and the remaining weights are normalized.
  */
 function calculateTrustGuardRisk({
-  videoModelRisk = null,
   replayRisk = null,
   livenessRisk = null,
   livenessCompleted = false,
@@ -91,16 +89,15 @@ function calculateTrustGuardRisk({
   facePresenceRisk = null,
 }) {
   const candidates = [
-    { name: "AI video classifier", value: videoModelRisk, weight: 0.40 },
-    { name: "Replay / temporal anomaly", value: replayRisk, weight: 0.18 },
+    { name: "Replay / temporal anomaly", value: replayRisk, weight: 0.30 },
     {
       name: "Liveness challenge",
       value: livenessCompleted ? livenessRisk : null,
-      weight: 0.16,
+      weight: 0.45,
     },
-    { name: "Face consistency", value: faceConsistencyRisk, weight: 0.12 },
-    { name: "Voice anomaly", value: voiceRisk, weight: 0.09 },
-    { name: "Face presence", value: facePresenceRisk, weight: 0.05 },
+    { name: "Face consistency", value: faceConsistencyRisk, weight: 0.15 },
+    { name: "Voice acoustic anomaly", value: voiceRisk, weight: 0.07 },
+    { name: "Face presence", value: facePresenceRisk, weight: 0.03 },
   ];
 
   const signals = candidates
@@ -115,8 +112,8 @@ function calculateTrustGuardRisk({
 
   if (!signals.length) {
     return {
-      score: 0,
-      level: "LOW",
+      score: null,
+      level: "ANALYZING",
       reasons: ["Waiting for enough analysis signals"],
     };
   }
@@ -132,32 +129,22 @@ function calculateTrustGuardRisk({
     ) / totalWeight
   );
 
+  let adjustedScore = score;
+  // A failed interactive challenge merits review, but does not by itself prove fraud.
+  if (livenessFailed) adjustedScore = Math.max(adjustedScore, 30);
   const highSignals = signals.filter((signal) => signal.value >= 70);
-  const strongVideoModel =
-    typeof videoModelRisk === "number" && videoModelRisk >= 80;
-  const corroboratedSignals = score >= 50 && highSignals.length >= 2;
-
-  let level = getRiskLevel(score);
-  if (strongVideoModel || corroboratedSignals) {
-    level = "HIGH";
-  } else if (livenessFailed && level === "LOW") {
-    // Failed challenge means retry/manual review; it alone does not prove fraud.
-    level = "MEDIUM";
-  }
+  const level = getRiskLevel(adjustedScore);
 
   const reasons = highSignals.map((signal) => signal.name);
   if (livenessFailed) {
     reasons.push("Liveness challenge failed; retry or verify manually");
-  }
-  if (strongVideoModel) {
-    reasons.push("Video classifier reports a high manipulation score");
   }
   if (!reasons.length) {
     reasons.push("No immediate high-risk signal detected");
   }
 
   return {
-    score: clamp(score),
+    score: clamp(adjustedScore),
     level,
     reasons: [...new Set(reasons)],
   };
@@ -187,6 +174,9 @@ function LiveGuard({ onBack })  {
 
   const landmarkerRef =
     useRef(null);
+
+  const faceAIStartingRef =
+    useRef(false);
 
   const animationRef =
     useRef(null);
@@ -255,6 +245,9 @@ function LiveGuard({ onBack })  {
   const challengeIssuedAtRef =
     useRef(null);
 
+  const challengePausedRef =
+    useRef(false);
+
   const challengeDirectionRef =
     useRef("LEFT");
 
@@ -298,7 +291,7 @@ function LiveGuard({ onBack })  {
     useRef(0);
 
   const voiceRiskRef =
-    useRef(0);
+    useRef(null);
 
   const facePresenceRiskRef =
     useRef(0);
@@ -345,10 +338,10 @@ function LiveGuard({ onBack })  {
 
   // Liveness
   const [livenessStatus, setLivenessStatus] =
-    useState("WAITING");
+    useState("WAITING FOR FACE");
 
   const [livenessScore, setLivenessScore] =
-    useState(0);
+    useState(null);
 
   // Replay
   const [replayScore, setReplayScore] =
@@ -380,6 +373,9 @@ function LiveGuard({ onBack })  {
   const [voiceStatus, setVoiceStatus] =
     useState("WAITING");
 
+  const voiceAnalysisSettledRef =
+    useRef(false);
+
   const [voiceSignal, setVoiceSignal] =
     useState(0);
 
@@ -394,10 +390,10 @@ function LiveGuard({ onBack })  {
 
   // Risk
   const [riskScore, setRiskScore] =
-    useState(0);
+    useState(null);
 
   const [riskLevel, setRiskLevel] =
-    useState("LOW");
+    useState("ANALYZING");
 
   const [riskReasons, setRiskReasons] =
     useState([]);
@@ -672,9 +668,22 @@ function LiveGuard({ onBack })  {
                   );
 
                   forceRemotePlayback();
+                  startFaceAIWhenVideoArrives();
                 };
             }
           );
+
+          remoteStream.addEventListener("addtrack", ({ track }) => {
+            if (track.kind !== "video") return;
+            track.enabled = true;
+            track.onunmute = () => {
+              forceRemotePlayback();
+              startFaceAIWhenVideoArrives();
+            };
+            if (remoteVideoRef.current) {
+              remoteVideoRef.current.srcObject = remoteStream;
+            }
+          });
 
           if (
             remoteVideoRef.current
@@ -708,12 +717,22 @@ function LiveGuard({ onBack })  {
                 );
 
                 forceRemotePlayback();
+                startFaceAIWhenVideoArrives();
               };
 
             video.oncanplay =
               () => {
                 forceRemotePlayback();
+                startFaceAIWhenVideoArrives();
               };
+
+            video.onplaying = () => {
+              startFaceAIWhenVideoArrives();
+            };
+
+            video.onresize = () => {
+              startFaceAIWhenVideoArrives();
+            };
 
             try {
               await video.play();
@@ -741,16 +760,16 @@ function LiveGuard({ onBack })  {
             remoteStream
           );
 
-          await waitForRemoteVideo();
+          const videoReady = await waitForRemoteVideo(15000);
 
-          if (
-            remoteVideoRef.current
-              ?.videoWidth > 0
-          ) {
+          if (videoReady) {
             await startFaceAI();
           } else {
             setAnalysisStatus(
-              "REMOTE VIDEO NOT READY"
+              "WAITING FOR CALLER VIDEO"
+            );
+            setError(
+              "The call connected, but no video frames arrived. Turn the caller camera on; video analysis will resume when frames arrive."
             );
           }
         }
@@ -906,16 +925,16 @@ function LiveGuard({ onBack })  {
     }
   }
 
-  async function waitForRemoteVideo() {
+  async function waitForRemoteVideo(timeoutMs = 15000) {
     const video =
       remoteVideoRef.current;
 
     if (!video) {
-      return;
+      return false;
     }
 
     /*
-     * Wait up to ~5 seconds for
+     * Wait for up to 15 seconds for
      * actual video dimensions.
      */
     const started =
@@ -924,7 +943,7 @@ function LiveGuard({ onBack })  {
     while (
       performance.now() -
         started <
-      5000
+        timeoutMs
     ) {
       if (
         video.videoWidth >
@@ -933,7 +952,7 @@ function LiveGuard({ onBack })  {
           0 &&
         video.readyState >= 2
       ) {
-        return;
+        return true;
       }
 
       await new Promise(
@@ -944,6 +963,16 @@ function LiveGuard({ onBack })  {
           )
       );
     }
+
+    return Boolean(video.videoWidth > 0 && video.readyState >= 2);
+  }
+
+  function startFaceAIWhenVideoArrives() {
+    const video = remoteVideoRef.current;
+    if (video?.videoWidth > 0 && video.readyState >= 2) {
+      setError("");
+      void startFaceAI();
+    }
   }
 
   // ==========================================================
@@ -951,7 +980,12 @@ function LiveGuard({ onBack })  {
   // ==========================================================
 
   async function startFaceAI() {
+    if (landmarkerRef.current || faceAIStartingRef.current) {
+      return;
+    }
+
     try {
+      faceAIStartingRef.current = true;
       const video =
         remoteVideoRef.current;
 
@@ -1022,6 +1056,8 @@ function LiveGuard({ onBack })  {
       setError(
         "Face AI model could not load."
       );
+    } finally {
+      faceAIStartingRef.current = false;
     }
   }
 
@@ -1238,15 +1274,7 @@ function LiveGuard({ onBack })  {
     faceFoundAtRef.current =
       null;
 
-    /*
-     * A genuine loss of face visibility
-     * is suspicious during a protected call.
-     */
-    livenessRiskRef.current =
-      Math.max(
-        livenessRiskRef.current,
-        65
-      );
+    pauseLivenessChallenge("FACE NOT VISIBLE — CENTER YOUR FACE");
 
     facePresenceRiskRef.current =
       Math.min(
@@ -1291,8 +1319,8 @@ function LiveGuard({ onBack })  {
       overlayCanvasRef.current
     );
 
-    facePresenceRiskRef.current =
-      80;
+    facePresenceRiskRef.current = 80;
+    pauseLivenessChallenge("ONE FACE NEEDED — KEEP ONLY THE CALLER IN FRAME");
 
     updateFacePresence(
       false
@@ -1302,6 +1330,21 @@ function LiveGuard({ onBack })  {
   // ==========================================================
   // LIVENESS
   // ==========================================================
+
+  function pauseLivenessChallenge(message) {
+    if (challengeRef.current === "TURN") {
+      challengePausedRef.current = true;
+      challengeIssuedAtRef.current = performance.now();
+      headTurnStartRef.current = null;
+      setLivenessStatus(message);
+      return;
+    }
+
+    if (challengeRef.current === "WAITING") {
+      setLivenessStatus("WAITING FOR FACE");
+      setLivenessScore(null);
+    }
+  }
 
   function processLiveness(
     landmarks
@@ -1346,6 +1389,17 @@ function LiveGuard({ onBack })  {
         eyeCenter) /
       eyeDistance;
 
+    if (challengePausedRef.current) {
+      challengePausedRef.current = false;
+      baselineYawRef.current = normalizedYaw;
+      challengeIssuedAtRef.current = performance.now();
+      headTurnStartRef.current = null;
+      setLivenessStatus(
+        `MOVE YOUR NOSE TO SCREEN ${challengeDirectionRef.current}`
+      );
+      setLivenessScore(25);
+    }
+
     const stableTime =
       performance.now() -
       (faceFoundAtRef.current ||
@@ -1378,11 +1432,13 @@ function LiveGuard({ onBack })  {
           ? "LEFT"
           : "RIGHT";
 
+      challengePausedRef.current = false;
+
       livenessFailedRef.current =
         false;
 
       setLivenessStatus(
-        `TURN YOUR HEAD ${challengeDirectionRef.current}`
+        `MOVE YOUR NOSE TO SCREEN ${challengeDirectionRef.current}`
       );
 
       setLivenessScore(
@@ -1416,11 +1472,11 @@ function LiveGuard({ onBack })  {
         performance.now());
 
     /*
-     * No correct response within 5 seconds.
+     * Allow time for the user to understand and complete the movement.
      */
     if (
       challengeAge >
-      5000
+      8000
     ) {
       completeLivenessFailure();
 
@@ -1441,42 +1497,47 @@ function LiveGuard({ onBack })  {
       normalizedYaw -
       baselineYawRef.current;
 
+    const movementThreshold = 0.12;
+    const releaseThreshold = 0.07;
+
     const correctDirection =
       challengeDirectionRef.current ===
       "LEFT"
-        ? movement <
-          -0.18
-        : movement >
-          0.18;
+        ? movement <= -movementThreshold
+        : movement >= movementThreshold;
+
+    const holdingCorrectDirection =
+      challengeDirectionRef.current === "LEFT"
+        ? movement <= -releaseThreshold
+        : movement >= releaseThreshold;
+
+    if (headTurnStartRef.current === null && correctDirection) {
+      headTurnStartRef.current = performance.now();
+
+      setLivenessScore(70);
+      setLivenessStatus("GOOD MOVEMENT — HOLD POSITION");
+      livenessRiskRef.current = 30;
+    }
 
     if (
-      correctDirection
+      headTurnStartRef.current !== null &&
+      !holdingCorrectDirection
     ) {
-      if (
-        headTurnStartRef.current ===
-        null
-      ) {
-        headTurnStartRef.current =
-          performance.now();
-
-        setLivenessScore(
-          70
-        );
-
-        livenessRiskRef.current =
-          30;
-      }
-
-      if (
-        performance.now() -
-          headTurnStartRef.current >
-        400
-      ) {
-        completeLiveness();
-      }
-    } else {
       headTurnStartRef.current =
         null;
+
+      setLivenessScore(25);
+      setLivenessStatus(
+        `MOVE YOUR NOSE TO SCREEN ${challengeDirectionRef.current}`
+      );
+      return;
+    }
+
+    if (
+      headTurnStartRef.current !== null &&
+      performance.now() - headTurnStartRef.current >= 500
+    ) {
+      completeLiveness();
     }
   }
 
@@ -1492,7 +1553,7 @@ function LiveGuard({ onBack })  {
     );
 
     setLivenessScore(
-      96
+      100
     );
 
     livenessRiskRef.current =
@@ -1542,6 +1603,8 @@ function LiveGuard({ onBack })  {
     challengeRef.current =
       "WAITING";
 
+    challengePausedRef.current = false;
+
     baselineYawRef.current =
       null;
 
@@ -1568,7 +1631,7 @@ function LiveGuard({ onBack })  {
     );
 
     setLivenessScore(
-      0
+      null
     );
   }
 
@@ -2114,6 +2177,7 @@ function LiveGuard({ onBack })  {
   async function startVoiceAnalysis(
     remoteStream
   ) {
+    voiceAnalysisSettledRef.current = false;
     try {
       const tracks =
         remoteStream.getAudioTracks();
@@ -2128,7 +2192,8 @@ function LiveGuard({ onBack })  {
         );
 
         voiceRiskRef.current =
-          0;
+          null;
+        voiceAnalysisSettledRef.current = true;
 
         return;
       }
@@ -2209,7 +2274,8 @@ function LiveGuard({ onBack })  {
       );
 
       voiceRiskRef.current =
-        0;
+        null;
+      voiceAnalysisSettledRef.current = true;
     }
   }
 
@@ -2619,6 +2685,7 @@ function LiveGuard({ onBack })  {
 
     voiceRiskRef.current =
       value;
+    voiceAnalysisSettledRef.current = true;
 
     setVoiceAnomalyRisk(
       value
@@ -2663,7 +2730,8 @@ function LiveGuard({ onBack })  {
       0;
 
     voiceRiskRef.current =
-      0;
+      null;
+    voiceAnalysisSettledRef.current = false;
 
     setVoiceStatus(
       "WAITING"
@@ -2733,22 +2801,27 @@ function LiveGuard({ onBack })  {
       return;
     }
 
-    if (totalFaceFramesRef.current < 4) {
-      setRiskScore(0);
-      setRiskLevel("LOW");
-      setRiskReasons(["Waiting for enough live video frames"]);
+    const challengeFinished =
+      challengeRef.current === "PASSED" ||
+      challengeRef.current === "FAILED";
+    const enoughSignals =
+      totalFaceFramesRef.current >= 4 &&
+      frameDiffHistoryRef.current.length >= 8 &&
+      consistencyHistoryRef.current.length >= 2 &&
+      challengeFinished &&
+      voiceAnalysisSettledRef.current;
+
+    if (!enoughSignals) {
+      setRiskScore(null);
+      setRiskLevel("ANALYZING");
+      setRiskReasons(["Waiting for the liveness challenge and signal samples to finish"]);
       setWarningVisible(false);
       return;
     }
 
-    const challengeFinished =
-      challengeRef.current === "PASSED" ||
-      challengeRef.current === "FAILED";
-
     const result = calculateTrustGuardRisk({
-      // No trained video deepfake classifier is connected to Live Guard yet.
-      videoModelRisk: null,
-      replayRisk: replayRiskRef.current,
+      replayRisk:
+        replayRiskRef.current,
       livenessRisk: livenessRiskRef.current,
       livenessCompleted: challengeFinished,
       livenessFailed: livenessFailedRef.current,
@@ -2774,7 +2847,9 @@ function LiveGuard({ onBack })  {
 
     try {
       saveIncidentSignals({
-        voice_risk: clamp(voiceRiskRef.current),
+        voice_risk: voiceRiskRef.current == null
+          ? null
+          : clamp(voiceRiskRef.current),
       });
     } catch {}
   }
@@ -2802,7 +2877,7 @@ function LiveGuard({ onBack })  {
       0;
 
     voiceRiskRef.current =
-      0;
+      null;
 
     facePresenceRiskRef.current =
       0;
@@ -2824,11 +2899,11 @@ function LiveGuard({ onBack })  {
     );
 
     setRiskScore(
-      0
+      null
     );
 
     setRiskLevel(
-      "LOW"
+      "ANALYZING"
     );
 
     setRiskReasons(
@@ -2870,11 +2945,11 @@ function LiveGuard({ onBack })  {
     resetConsistency();
 
     setRiskScore(
-      0
+      null
     );
 
     setRiskLevel(
-      "LOW"
+      "ANALYZING"
     );
 
     setRiskReasons(
@@ -3161,7 +3236,9 @@ function LiveGuard({ onBack })  {
       : riskLevel ===
           "MEDIUM"
         ? "#f5c86a"
-        : "#44ff9a";
+        : riskLevel === "ANALYZING"
+          ? "#8391a4"
+          : "#44ff9a";
 
   return (
     <div className="liveguard-page">
@@ -3299,7 +3376,7 @@ function LiveGuard({ onBack })  {
                   900,
               }}
             >
-              {riskScore}
+              {riskScore == null ? "—" : riskScore}
             </div>
 
             <div
@@ -3571,7 +3648,7 @@ function LiveGuard({ onBack })  {
                     900,
                 }}
               >
-                {riskScore}
+                {riskScore == null ? "—" : riskScore}
               </div>
 
               <div
@@ -3586,7 +3663,7 @@ function LiveGuard({ onBack })  {
                     800,
                 }}
               >
-                TRUSTGUARD RISK SCORE
+                TRUSTGUARD HEURISTIC RISK SCORE
               </div>
 
               <div
@@ -3607,7 +3684,7 @@ function LiveGuard({ onBack })  {
                 <div
                   style={{
                     width:
-                      `${riskScore}%`,
+                      `${riskScore ?? 0}%`,
                     height:
                       "100%",
                     background:
@@ -3629,10 +3706,10 @@ function LiveGuard({ onBack })  {
                 </span>
 
                 <strong>
-                  {Math.round(
-                    livenessRiskRef.current
-                  )}
-                  /100
+                  {challengeRef.current === "PASSED" ||
+                  challengeRef.current === "FAILED"
+                    ? `${Math.round(livenessRiskRef.current)}/100`
+                    : "—"}
                 </strong>
               </div>
 
@@ -3785,13 +3862,13 @@ function LiveGuard({ onBack })  {
                     1.5,
                 }}
               >
-                {riskLevel ===
-                "HIGH"
-                  ? "REQUIRE MANUAL VERIFICATION BEFORE FINANCIAL ACTION"
-                  : riskLevel ===
-                      "MEDIUM"
-                    ? "REQUEST ADDITIONAL VERIFICATION BEFORE PROCEEDING"
-                    : "NO IMMEDIATE HIGH-RISK MEDIA SIGNAL DETECTED"}
+                {riskLevel === "HIGH"
+                  ? "HIGH-RISK WARNING — STOP AND VERIFY THROUGH AN OFFICIAL CHANNEL"
+                  : riskLevel === "MEDIUM"
+                    ? "REVIEW NEEDED — INDEPENDENTLY VERIFY BEFORE PROCEEDING"
+                    : riskLevel === "ANALYZING"
+                      ? "ANALYZING — NOT ENOUGH LIVE FRAMES FOR A RISK SCORE"
+                      : "LOWER CONCERN — AVAILABLE HEURISTICS FOUND NO STRONG WARNING"}
               </div>
 
             </div>
@@ -3859,15 +3936,12 @@ function LiveGuard({ onBack })  {
             </div>
 
             <SignalBox
-              title="LIVENESS"
-              value={`${livenessScore}%`}
+              title="CHALLENGE PROGRESS"
+              value={livenessScore == null ? "—" : `${livenessScore}%`}
               status={
                 livenessStatus
               }
-              good={
-                livenessScore >=
-                90
-              }
+              good={livenessStatus === "LIVENESS VERIFIED"}
             />
 
             <SignalBox
@@ -4035,7 +4109,7 @@ function LiveGuard({ onBack })  {
 
           <div className="roadmap-item active">
             <span>03</span>
-            Replay / Deepfake
+            Replay / Frozen-Frame Check
           </div>
 
           <div className="roadmap-item active">

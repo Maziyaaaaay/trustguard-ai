@@ -1,8 +1,16 @@
-﻿import { useState } from "react";
+﻿import { lazy, Suspense, useState } from "react";
 import "./App.css";
 
-import LiveGuardPage from "./pages/LiveGuard.jsx";
-import MediaAnalysisPage from "./pages/MediaAnalysis.jsx";
+const LiveGuardPage = lazy(() => import("./pages/LiveGuard.jsx"));
+const MediaAnalysisPage = lazy(() => import("./pages/MediaAnalysis.jsx"));
+
+function PageLoader() {
+  return (
+    <main className="tg-page-loader" role="status" aria-live="polite">
+      Loading TrustGuard analysis tools…
+    </main>
+  );
+}
 
 export default function App() {
   const [activePage, setActivePage] = useState("home");
@@ -10,11 +18,19 @@ export default function App() {
   const goHome = () => setActivePage("home");
 
   if (activePage === "liveguard") {
-    return <LiveGuardPage onBack={goHome} />;
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <LiveGuardPage onBack={goHome} />
+      </Suspense>
+    );
   }
 
   if (activePage === "media") {
-    return <MediaAnalysisPage onBack={goHome} />;
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <MediaAnalysisPage onBack={goHome} />
+      </Suspense>
+    );
   }
 
   return (
@@ -123,6 +139,38 @@ export default function App() {
               <span className="tg-card-arrow" aria-hidden="true">↗</span>
             </button>
           </div>
+
+          <section className="tg-handoff-section" aria-labelledby="handoff-heading">
+            <div className="tg-section-heading">
+              <div>
+                <p className="tg-eyebrow">SPECIALIST CHECKS</p>
+                <h2 id="handoff-heading">Continue with a specialist</h2>
+              </div>
+              <span className="tg-section-caption">Opens the service in WhatsApp</span>
+            </div>
+            <div className="tg-handoff-grid">
+              <article className="tg-handoff-card">
+                <div>
+                  <span className="tg-card-kicker">NEWS & CLAIMS</span>
+                  <h3>SathyaScan</h3>
+                  <p>Send a news story or article for a fake-news check.</p>
+                </div>
+                <a href="https://wa.me/919074871768" target="_blank" rel="noopener noreferrer">
+                  Open SathyaScan <span aria-hidden="true">↗</span>
+                </a>
+              </article>
+              <article className="tg-handoff-card">
+                <div>
+                  <span className="tg-card-kicker">SCAM & CYBER CHECKS</span>
+                  <h3>CyberWall</h3>
+                  <p>Check APKs, bank details, links, emails, SMS, IPs, or phone numbers.</p>
+                </div>
+                <a href="https://wa.me/919497964163" target="_blank" rel="noopener noreferrer">
+                  Open CyberWall <span aria-hidden="true">↗</span>
+                </a>
+              </article>
+            </div>
+          </section>
         </section>
 
         <footer className="tg-footer">

@@ -7,15 +7,16 @@ const ACCEPTED_EXTENSIONS = new Set([
   "mp4", "mov", "webm",
   "wav", "mp3", "m4a",
 ]);
+const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
 const SIGNAL_LABELS = {
-  synthetic_voice: "Synthetic voice indicator",
-  face_manipulation: "Face manipulation indicator",
-  media_manipulation: "Media manipulation clues",
+  synthetic_voice: "Acoustic anomaly (not a voice-clone detector)",
+  face_manipulation: "Face-track instability",
+  media_manipulation: "Frame and media anomalies",
   identity_consistency: "Face consistency indicator",
   replay_risk: "Replay / repeated-frame indicator",
   liveness: "Liveness indicator",
-  ai_synthetic_indicator: "AI / synthetic indicator",
+  ai_synthetic_indicator: "Combined heuristic anomaly indicator",
   metadata_risk: "Metadata indicator",
   image_integrity: "Image integrity indicator",
 };
@@ -30,11 +31,9 @@ function fileKind(file) {
   return "unknown";
 }
 
-function riskLevel(score, suppliedLevel) {
-  const normalized = String(suppliedLevel || "").toUpperCase();
-  if (["HIGH", "MEDIUM", "LOW"].includes(normalized)) return normalized;
-  if (score >= 75) return "HIGH";
-  if (score >= 45) return "MEDIUM";
+function riskLevel(score) {
+  if (score > 50) return "HIGH";
+  if (score >= 30) return "MEDIUM";
   return "LOW";
 }
 
@@ -93,6 +92,10 @@ export default function MediaAnalysisPage({ onBack }) {
 
   const chooseFile = (candidate) => {
     if (!candidate) return;
+    if (candidate.size > MAX_UPLOAD_BYTES) {
+      setError("Files must be 50 MB or smaller. Choose a shorter or smaller media file.");
+      return;
+    }
     const extension = candidate.name.split(".").pop()?.toLowerCase();
     if (!ACCEPTED_EXTENSIONS.has(extension)) {
       setError("Unsupported file. Choose JPG, PNG, MP4, MOV, WebM, WAV, MP3, or M4A.");
@@ -131,7 +134,7 @@ export default function MediaAnalysisPage({ onBack }) {
 
   const scoreValue = Number(result?.risk?.score ?? result?.risk_score ?? 0);
   const score = Math.max(0, Math.min(100, Math.round(Number.isFinite(scoreValue) ? scoreValue : 0)));
-  const level = riskLevel(score, result?.risk?.level);
+  const level = riskLevel(score);
   const signals = Object.entries(result?.signals || {}).filter(
     ([, value]) => typeof value === "number" && Number.isFinite(value)
   );
@@ -153,7 +156,7 @@ export default function MediaAnalysisPage({ onBack }) {
             <p className="ma-subtitle">Inspect an image, audio clip, or video for signals that may need review.</p>
           </div>
         </div>
-        <span className="ma-api-badge"><i /> API analysis</span>
+        <span className="ma-api-badge"><i /> Local analysis</span>
       </header>
 
       <section className="ma-layout">
@@ -214,7 +217,7 @@ export default function MediaAnalysisPage({ onBack }) {
               </div>
             </div>
           )}
-          <p className="ma-private-note"><span>⌑</span> File is sent to your configured TrustGuard backend for analysis.</p>
+          <p className="ma-private-note"><span>⌑</span> Analysis runs through your TrustGuard backend; no third-party API credentials are needed.</p>
         </div>
 
         <div className="ma-panel ma-result-panel" aria-live="polite">
@@ -251,6 +254,21 @@ export default function MediaAnalysisPage({ onBack }) {
                   <p>{result.summary || "Review the signals below with the original file."}</p>
                 </div>
               </div>
+
+              {kind === "video" && result.video_forensics && (
+                <section className="ma-video-checks" aria-label="Video analysis details">
+                  <h3>Video checks performed</h3>
+                  <div className="ma-video-check-grid">
+                    <div><span>Duration</span><strong>{Number(result.video_forensics.duration_seconds || 0).toFixed(1)} sec</strong></div>
+                    <div><span>Frames sampled</span><strong>{result.video_forensics.sampled_frames || 0}</strong></div>
+                    <div><span>Near-identical frames</span><strong>{Number(result.video_forensics.duplicate_frame_ratio || 0).toFixed(1)}%</strong></div>
+                    <div><span>Average frame change</span><strong>{Number(result.video_forensics.average_frame_motion || 0).toFixed(2)}</strong></div>
+                    <div><span>Face detected in frames</span><strong>{Number(result.video_forensics.face_metrics?.face_presence || 0).toFixed(0)}%</strong></div>
+                    <div><span>Audio analysis</span><strong>{result.video_forensics.audio?.success ? "Heuristic audio check" : "Unavailable"}</strong></div>
+                  </div>
+                  <p>These are explainable frame and signal heuristics. This prototype does not run a trained AI deepfake classifier.</p>
+                </section>
+              )}
 
               {signals.length > 0 && (
                 <section className="ma-signals">

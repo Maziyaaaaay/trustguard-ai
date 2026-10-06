@@ -1,5 +1,5 @@
 ﻿const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000"
+  import.meta.env.VITE_API_BASE_URL || ""
 ).replace(/\/+$/, "");
 
 export async function analyzeMediaFile(file, { signal } = {}) {
@@ -24,7 +24,7 @@ export async function analyzeMediaFile(file, { signal } = {}) {
     }
 
     throw new Error(
-      `Cannot reach the TrustGuard API at ${API_BASE_URL}. Check that the backend is running and VITE_API_BASE_URL is correct.`
+      `Cannot reach the TrustGuard API${API_BASE_URL ? ` at ${API_BASE_URL}` : ""}. Check that the backend is running and the API URL is correct.`
     );
   }
 

@@ -1,5 +1,8 @@
 from face_detector import detect_faces
 
+import asyncio
+import logging
+
 from typing import List, Optional, Dict, Any
 
 from io import BytesIO
@@ -27,7 +30,7 @@ from pathlib import Path
 
 import cv2
 
-import fitz  # PyMuPDF
+import pymupdf as fitz
 
 import numpy as np
 
@@ -44,6 +47,7 @@ from fastapi import (
     FastAPI,
 
     File,
+    HTTPException,
 
     UploadFile,
 
@@ -55,7 +59,8 @@ from fastapi import (
 
 from fastapi.middleware.cors import CORSMiddleware
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
+from starlette.concurrency import run_in_threadpool
 
 
 
@@ -79,6 +84,8 @@ app = FastAPI(
 
 )
 
+logger = logging.getLogger("trustguard.api")
+
 
 
 
@@ -95,13 +102,20 @@ app.add_middleware(
 
     CORSMiddleware,
 
-    allow_origins=["*"],
+    allow_origins=[
+        origin.strip()
+        for origin in os.getenv(
+            "TRUSTGUARD_CORS_ORIGINS",
+            "http://localhost:5173,http://127.0.0.1:5173",
+        ).split(",")
+        if origin.strip()
+    ],
 
     allow_credentials=False,
 
-    allow_methods=["*"],
+    allow_methods=["GET", "POST"],
 
-    allow_headers=["*"],
+    allow_headers=["Content-Type"],
 
 )
 
@@ -117,13 +131,51 @@ app.add_middleware(
 
 
 
-TESSERACT_PATH = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+LOCAL_TESSERACT_PATH = (
+    Path(__file__).resolve().parent.parent
+    / ".tools"
+    / "tesseract"
+    / "bin"
+    / "tesseract"
+)
+TESSERACT_PATH = (
+    os.getenv("TESSERACT_CMD")
+    or shutil.which("tesseract")
+    or (
+        str(LOCAL_TESSERACT_PATH)
+        if LOCAL_TESSERACT_PATH.is_file()
+        else r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+    )
+)
+MAX_UPLOAD_BYTES = 50 * 1024 * 1024
+MAX_MEDIA_DURATION_SECONDS = 180
+MAX_VIDEO_DIMENSION = 4096
+MAX_CONCURRENT_ANALYSES = 2
+analysis_slots = asyncio.Semaphore(MAX_CONCURRENT_ANALYSES)
+Image.MAX_IMAGE_PIXELS = 25_000_000
+VIDEO_FACE_CLASSIFIER = cv2.CascadeClassifier(
+    os.path.join(
+        cv2.data.haarcascades,
+        "haarcascade_frontalface_default.xml",
+    )
+)
 
 
 
 if os.path.exists(TESSERACT_PATH):
 
     pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
+
+
+async def read_upload_limited(file: UploadFile) -> bytes:
+    """Read an upload with a strict per-file size cap."""
+    content = await file.read(MAX_UPLOAD_BYTES + 1)
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File is too large. Maximum upload size is {MAX_UPLOAD_BYTES // (1024 * 1024)} MB.",
+        )
+    return content
 
 
 
@@ -138,16 +190,17 @@ if os.path.exists(TESSERACT_PATH):
 
 
 class RiskInput(BaseModel):
+    model_config = ConfigDict(allow_inf_nan=False)
 
-    voice_risk: float = 0
+    voice_risk: float = Field(default=0, ge=0, le=100)
 
-    document_risk: float = 0
+    document_risk: float = Field(default=0, ge=0, le=100)
 
-    identity_risk: float = 0
+    identity_risk: float = Field(default=0, ge=0, le=100)
 
-    transaction_risk: float = 0
+    transaction_risk: float = Field(default=0, ge=0, le=100)
 
-    graph_risk: float = 0
+    graph_risk: float = Field(default=0, ge=0, le=100)
 
 
 
@@ -168,38 +221,40 @@ class RiskResponse(BaseModel):
 
 
 class TransactionInput(BaseModel):
+    model_config = ConfigDict(allow_inf_nan=False)
 
-    transaction_id: str
+    transaction_id: str = Field(min_length=1, max_length=128)
 
-    amount: float
+    amount: float = Field(ge=0, le=1_000_000_000)
 
-    method: str
+    method: str = Field(min_length=1, max_length=32)
 
-    sender: str
+    sender: str = Field(min_length=1, max_length=128)
 
-    receiver: str
+    receiver: str = Field(min_length=1, max_length=128)
 
 
 
 
 
 class IdentityInput(BaseModel):
+    model_config = ConfigDict(allow_inf_nan=False)
 
-    name: str
+    name: str = Field(min_length=1, max_length=128)
 
-    phone: Optional[str] = None
+    phone: Optional[str] = Field(default=None, max_length=32)
 
-    email: Optional[str] = None
+    email: Optional[str] = Field(default=None, max_length=254)
 
-    account: Optional[str] = None
+    account: Optional[str] = Field(default=None, max_length=128)
 
     document_verified: bool = False
 
-    face_match_score: float = 0
+    face_match_score: float = Field(default=0, ge=0, le=100)
 
     phone_verified: bool = False
 
-    account_consistency: float = 0
+    account_consistency: float = Field(default=0, ge=0, le=100)
 
 
 
@@ -214,6 +269,10 @@ class IdentityInput(BaseModel):
 
 
 call_connections: Dict[str, List[WebSocket]] = {}
+call_connections_lock = asyncio.Lock()
+MAX_SIGNALING_ROOMS = 100
+MAX_SIGNALING_PEERS_PER_ROOM = 2
+MAX_SIGNALING_MESSAGE_BYTES = 64 * 1024
 
 
 
@@ -237,13 +296,14 @@ def clamp_score(value: float) -> int:
 
 def get_risk_level(score: int) -> str:
 
-    if score >= 75:
+    # Prototype policy: 0–29 lower concern, 30–50 review, 51–100 high risk.
+    if score > 50:
 
         return "HIGH"
 
 
 
-    if score >= 45:
+    if score >= 30:
 
         return "MEDIUM"
 
@@ -261,9 +321,7 @@ def build_recommendation(level: str) -> str:
 
         return (
 
-            "Pause the suspicious interaction and require "
-
-            "additional verification before financial action."
+            "High-risk warning: stop and verify through an independently known official channel before sharing information or taking action. This score is an indicator, not proof of fraud."
 
         )
 
@@ -273,9 +331,7 @@ def build_recommendation(level: str) -> str:
 
         return (
 
-            "Request additional identity verification and "
-
-            "manual review before proceeding."
+            "Review the original evidence and independently verify the person or request before proceeding. This score is not a final verdict."
 
         )
 
@@ -283,9 +339,7 @@ def build_recommendation(level: str) -> str:
 
     return (
 
-        "No immediate high-risk action detected. "
-
-        "Continue monitoring the interaction."
+        "Lower concern based on the available heuristic signals. This does not certify safety; continue normal verification."
 
     )
 
@@ -715,6 +769,15 @@ def perform_ocr(image: Image.Image) -> Dict[str, Any]:
 
         )
 
+        height, width = gray.shape[:2]
+        scale = min(1.0, 2400 / max(height, width, 1))
+        if scale < 1.0:
+            gray = cv2.resize(
+                gray,
+                (max(1, int(width * scale)), max(1, int(height * scale))),
+                interpolation=cv2.INTER_AREA,
+            )
+
 
 
         # Mild preprocessing improves OCR on ID images.
@@ -776,6 +839,8 @@ def perform_ocr(image: Image.Image) -> Dict[str, Any]:
             output_type=pytesseract.Output.DICT,
 
             config="--oem 3 --psm 6",
+
+            timeout=20,
 
         )
 
@@ -1281,9 +1346,9 @@ def extract_fields(text: str) -> Dict[str, Any]:
 
     name_patterns = [
 
-        r"(?:NAME|SURNAME)\s*[:**\\-**]\s*([A-Z][A-Z .]{2,50})",
+        r"(?:NAME|SURNAME)\s*[:*-]\s*([A-Z][A-Z .]{2,50})",
 
-        r"(?:NAME OF HOLDER)\s*[:**\\-**]\s*([A-Z][A-Z .]{2,50})",
+        r"(?:NAME OF HOLDER)\s*[:*-]\s*([A-Z][A-Z .]{2,50})",
 
     ]
 
@@ -1967,17 +2032,20 @@ def render_pdf_first_page(
 
 
 
+    if len(document) > 1000:
+        document.close()
+        raise ValueError("PDF contains too many pages for prototype analysis.")
+
     page = document.load_page(0)
 
 
 
-    matrix = fitz.Matrix(
-
+    page_rect = page.rect
+    page_scale = min(
         2.0,
-
-        2.0,
-
+        2048 / max(page_rect.width, page_rect.height, 1),
     )
+    matrix = fitz.Matrix(page_scale, page_scale)
 
 
 
@@ -3139,16 +3207,10 @@ def _detect_video_faces(frame: np.ndarray) -> List[tuple]:
     gray = _gray_frame(frame)
     gray = cv2.equalizeHist(gray)
 
-    cascade_path = os.path.join(
-        cv2.data.haarcascades,
-        "haarcascade_frontalface_default.xml",
-    )
-    classifier = cv2.CascadeClassifier(cascade_path)
-
-    if classifier.empty():
+    if VIDEO_FACE_CLASSIFIER.empty():
         return []
 
-    faces = classifier.detectMultiScale(
+    faces = VIDEO_FACE_CLASSIFIER.detectMultiScale(
         gray,
         scaleFactor=1.08,
         minNeighbors=4,
@@ -3253,8 +3315,12 @@ def _video_audio_to_wav(content: bytes, extension: str) -> Optional[str]:
             "-y",
             "-i",
             source_path,
+            "-t",
+            str(MAX_MEDIA_DURATION_SECONDS),
             "-vn",
             "-ac",
+            "1",
+            "-threads",
             "1",
             "-ar",
             "16000",
@@ -3302,6 +3368,18 @@ def analyze_wav_audio(wav_path: str) -> Dict[str, Any]:
             sample_rate = wav.getframerate()
             sample_width = wav.getsampwidth()
             frame_count = wav.getnframes()
+            duration = frame_count / max(sample_rate, 1)
+            if (
+                duration > MAX_MEDIA_DURATION_SECONDS
+                or sample_rate < 8_000
+                or sample_rate > 96_000
+                or channels < 1
+                or channels > 2
+            ):
+                return {
+                    "success": False,
+                    "error": "Audio exceeds the supported duration or format limits.",
+                }
             raw = wav.readframes(frame_count)
 
         if not raw or sample_width not in (1, 2, 4):
@@ -3425,6 +3503,7 @@ def analyze_video_forensics(content: bytes, filename: str) -> Dict[str, Any]:
     """Sample a video and calculate explainable temporal/face/replay signals."""
     extension = Path(filename).suffix.lower() or ".mp4"
     source_path = None
+    capture = None
     try:
         source = tempfile.NamedTemporaryFile(suffix=extension, delete=False)
         source.write(content)
@@ -3443,6 +3522,26 @@ def analyze_video_forensics(content: bytes, filename: str) -> Dict[str, Any]:
         width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH) or 0)
         height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0)
         duration = frame_count / fps if fps > 0 and frame_count > 0 else 0.0
+
+        if (
+            width <= 0
+            or height <= 0
+            or width > MAX_VIDEO_DIMENSION
+            or height > MAX_VIDEO_DIMENSION
+            or width * height > 16_777_216
+        ):
+            capture.release()
+            return {
+                "success": False,
+                "error": "Video dimensions exceed the supported analysis limit.",
+            }
+
+        if duration <= 0 or duration > MAX_MEDIA_DURATION_SECONDS:
+            capture.release()
+            return {
+                "success": False,
+                "error": "Video must have a readable duration under 3 minutes.",
+            }
 
         target_samples = min(24, max(8, int(duration * 2) if duration > 0 else 12))
         if frame_count > 0:
@@ -3466,6 +3565,16 @@ def analyze_video_forensics(content: bytes, filename: str) -> Dict[str, Any]:
             ok, frame = capture.read()
             if not ok or frame is None:
                 continue
+
+            # Bound per-frame memory and CPU for high-resolution uploads.
+            frame_height, frame_width = frame.shape[:2]
+            scale = min(1.0, 1280 / max(frame_width, 1), 720 / max(frame_height, 1))
+            if scale < 1.0:
+                frame = cv2.resize(
+                    frame,
+                    (int(frame_width * scale), int(frame_height * scale)),
+                    interpolation=cv2.INTER_AREA,
+                )
 
             frames.append(frame)
             faces = _detect_video_faces(frame)
@@ -3605,7 +3714,6 @@ def analyze_video_forensics(content: bytes, filename: str) -> Dict[str, Any]:
             "face_manipulation": face_manipulation,
             "media_manipulation": media_manipulation,
             "replay_risk": replay_risk,
-            "liveness_indicator": clamp_score(100 - replay_risk),
             "synthetic_voice": synthetic_voice,
             "ai_synthetic_indicator": ai_indicator,
             "risk": combined_score,
@@ -3616,9 +3724,9 @@ def analyze_video_forensics(content: bytes, filename: str) -> Dict[str, Any]:
             "audio": audio_result,
             "findings": findings,
             "analysis_note": (
-                "Video results are explainable forensic heuristics, not definitive proof of a deepfake. "
-                "A trained deepfake model can be added later for stronger classification."
+            "Video results are explainable frame and acoustic heuristics, not a trained deepfake detector or definitive proof of a deepfake."
             ),
+            "method": "Sampled-frame, face/motion and optional acoustic heuristics.",
         }
     except Exception as error:
         return {
@@ -3626,6 +3734,8 @@ def analyze_video_forensics(content: bytes, filename: str) -> Dict[str, Any]:
             "error": str(error),
         }
     finally:
+        if capture is not None:
+            capture.release()
         if source_path:
             try:
                 os.remove(source_path)
@@ -3663,7 +3773,6 @@ def analyze_image_media(content: bytes, filename: str, content_type: str) -> Dic
                 "media_manipulation": integrity.get("risk", 0),
                 "identity_consistency": 100 if faces.get("detected") else 0,
                 "replay_risk": 0,
-                "liveness": 0,
                 "ai_synthetic_indicator": ai_result.get("risk", 0),
                 "metadata_risk": metadata_result.get("risk", 0),
                 "ocr_confidence": ocr.get("confidence", 0),
@@ -3692,16 +3801,32 @@ def analyze_image_media(content: bytes, filename: str, content_type: str) -> Dic
 
 @app.post("/api/analyze/media")
 async def analyze_media(file: UploadFile = File(...)):
-    content = await file.read()
-    filename = file.filename or "unknown"
+    async with analysis_slots:
+        try:
+            return await _analyze_media(file)
+        except HTTPException:
+            raise
+        except Exception:
+            logger.exception("Media analysis request failed")
+            raise HTTPException(
+                status_code=422,
+                detail="The uploaded media could not be decoded or analyzed. Check the file format and limits, then try again.",
+            )
+
+
+async def _analyze_media(file: UploadFile):
+    content = await read_upload_limited(file)
+    if not content:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+    filename = os.path.basename((file.filename or "unknown").replace("\\", "/"))[:255]
     content_type = file.content_type or "application/octet-stream"
     file_size = len(content)
     kind = media_file_kind(filename, content_type)
 
     if kind == "video":
-        result = analyze_video_forensics(content, filename)
+        result = await run_in_threadpool(analyze_video_forensics, content, filename)
     elif kind == "audio":
-        result = analyze_audio_bytes(content, filename)
+        result = await run_in_threadpool(analyze_audio_bytes, content, filename)
         if result.get("success"):
             result["kind"] = "audio"
             result["media_type"] = "AUDIO"
@@ -3712,7 +3837,6 @@ async def analyze_media(file: UploadFile = File(...)):
                 "media_manipulation": 0,
                 "identity_consistency": 0,
                 "replay_risk": 0,
-                "liveness": 0,
                 "ai_synthetic_indicator": result.get("synthetic_voice", 0),
             }
             result["findings"] = result.get("reasons", []) or [
@@ -3722,15 +3846,15 @@ async def analyze_media(file: UploadFile = File(...)):
                 "Audio results are acoustic heuristics, not definitive proof of synthetic speech."
             )
     elif kind == "image":
-        result = analyze_image_media(content, filename, content_type)
+        result = await run_in_threadpool(analyze_image_media, content, filename, content_type)
     else:
-        return {
-            "success": False,
-            "module": "media_analysis",
-            "error": "Unsupported media type. Upload JPG/PNG, MP4/MOV/WebM, or WAV/MP3/M4A.",
-        }
+        raise HTTPException(
+            status_code=415,
+            detail="Unsupported media type. Upload JPG/PNG, MP4/MOV/WebM, or WAV/MP3/M4A.",
+        )
 
     if not result.get("success"):
+        logger.warning("Media analysis failed for %s upload", kind)
         return {
             "success": False,
             "module": "media_analysis",
@@ -3739,7 +3863,7 @@ async def analyze_media(file: UploadFile = File(...)):
                 "type": content_type,
                 "size_bytes": file_size,
             },
-            "error": result.get("error", "Media analysis failed."),
+            "error": "The uploaded media could not be decoded or analyzed. Check the file format and limits, then try again.",
         }
 
     risk_score = clamp_score(result.get("risk", 0))
@@ -3752,8 +3876,7 @@ async def analyze_media(file: UploadFile = File(...)):
             "media_manipulation": result.get("media_manipulation", 0),
             "identity_consistency": result.get("identity_consistency", 0),
             "replay_risk": result.get("replay_risk", 0),
-            "liveness": result.get("liveness_indicator", 0),
-            "ai_synthetic_indicator": result.get("ai_synthetic_indicator", 0),
+        "ai_synthetic_indicator": result.get("ai_synthetic_indicator", 0),
         }
 
     return {
@@ -3780,8 +3903,8 @@ async def analyze_media(file: UploadFile = File(...)):
         "ai_indicators": result.get("ai_indicators"),
         "findings": result.get("findings", []),
         "summary": (
-            "Media signals were analyzed from the uploaded evidence."
-            if risk_score < 45
+            "Lower concern based on available heuristic signals; this does not certify safety."
+            if risk_score < 30
             else "One or more media authenticity signals warrant review."
         ),
         "recommendation": build_recommendation(get_risk_level(risk_score)),
@@ -3794,112 +3917,39 @@ async def analyze_media(file: UploadFile = File(...)):
 
 
 @app.post("/api/analyze/document")
+async def analyze_document(file: UploadFile = File(...)):
+    async with analysis_slots:
+        try:
+            content = await read_upload_limited(file)
+            if not content:
+                raise HTTPException(status_code=400, detail="Uploaded file is empty.")
 
-async def analyze_document(
-
-    file: UploadFile = File(...)
-
-):
-
-    try:
-
-        content = await file.read()
-
-
-
-        filename = file.filename or "unknown"
-
-        content_type = file.content_type or "application/octet-stream"
-
-
-
-        if not content:
-
-            return {
-
-                "success": False,
-
-                "error": "Uploaded file is empty.",
-
+            filename = os.path.basename((file.filename or "unknown").replace("\\", "/"))[:255]
+            content_type = file.content_type or "application/octet-stream"
+            allowed_extensions = {
+                ".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff", ".pdf",
             }
+            extension = os.path.splitext(filename)[1].lower()
+            if extension not in allowed_extensions:
+                raise HTTPException(
+                    status_code=415,
+                    detail="Unsupported document format. Use JPG, PNG, WEBP, BMP, TIFF or PDF.",
+                )
 
-
-
-        allowed_extensions = {
-
-            ".jpg",
-
-            ".jpeg",
-
-            ".png",
-
-            ".webp",
-
-            ".bmp",
-
-            ".tif",
-
-            ".tiff",
-
-            ".pdf",
-
-        }
-
-
-
-        extension = os.path.splitext(
-
-            filename
-
-        )[1].lower()
-
-
-
-        if extension not in allowed_extensions:
-
-            return {
-
-                "success": False,
-
-                "error": (
-
-                    "Unsupported document format. "
-
-                    "Use JPG, PNG, WEBP, BMP, TIFF or PDF."
-
-                ),
-
-            }
-
-
-
-        result = perform_document_analysis(
-
-            content,
-
-            filename,
-
-            content_type,
-
-        )
-
-
-
-        return result
-
-
-
-    except Exception as error:
-
-        return {
-
-            "success": False,
-
-            "module": "document_analysis",
-
-            "error": str(error),
-
-        }
+            return await run_in_threadpool(
+                perform_document_analysis,
+                content,
+                filename,
+                content_type,
+            )
+        except HTTPException:
+            raise
+        except Exception:
+            logger.exception("Document analysis failed")
+            raise HTTPException(
+                status_code=422,
+                detail="The document could not be decoded or analyzed. Check the file format and limits, then try again.",
+            )
 
 
 
@@ -4485,21 +4535,34 @@ async def websocket_call(
 
 ):
 
-    await websocket.accept()
+    allowed_origins = {
+        origin.strip()
+        for origin in os.getenv(
+            "TRUSTGUARD_CORS_ORIGINS",
+            "http://localhost:5173,http://127.0.0.1:5173",
+        ).split(",")
+        if origin.strip()
+    }
+    origin = websocket.headers.get("origin")
+    if (
+        not origin
+        or origin not in allowed_origins
+        or not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", room_id)
+    ):
+        await websocket.close(code=1008)
+        return
 
+    async with call_connections_lock:
+        if room_id not in call_connections and len(call_connections) >= MAX_SIGNALING_ROOMS:
+            await websocket.close(code=1013)
+            return
 
+        if len(call_connections.get(room_id, [])) >= MAX_SIGNALING_PEERS_PER_ROOM:
+            await websocket.close(code=1008)
+            return
 
-    if room_id not in call_connections:
-
-        call_connections[room_id] = []
-
-
-
-    call_connections[room_id].append(
-
-        websocket
-
-    )
+        await websocket.accept()
+        call_connections.setdefault(room_id, []).append(websocket)
 
 
 
@@ -4508,6 +4571,16 @@ async def websocket_call(
         while True:
 
             message = await websocket.receive_text()
+
+            if len(message.encode("utf-8")) > MAX_SIGNALING_MESSAGE_BYTES:
+                await websocket.close(code=1009)
+                break
+
+            try:
+                json.loads(message)
+            except (TypeError, json.JSONDecodeError):
+                await websocket.close(code=1003)
+                break
 
 
 
@@ -4551,35 +4624,12 @@ async def websocket_call(
 
     finally:
 
-        peers = call_connections.get(
-
-            room_id,
-
-            [],
-
-        )
-
-
-
-        if websocket in peers:
-
-            peers.remove(
-
-                websocket
-
-            )
-
-
-
-        if not peers:
-
-            call_connections.pop(
-
-                room_id,
-
-                None,
-
-            )
+        async with call_connections_lock:
+            peers = call_connections.get(room_id, [])
+            if websocket in peers:
+                peers.remove(websocket)
+            if not peers:
+                call_connections.pop(room_id, None)
 
 
 
@@ -4603,7 +4653,7 @@ if __name__ == "__main__":
 
         "main:app",
 
-        host="0.0.0.0",
+        host=os.getenv("TRUSTGUARD_HOST", "127.0.0.1"),
 
         port=8000,
 
