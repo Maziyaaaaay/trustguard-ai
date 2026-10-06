@@ -6,6 +6,7 @@
   border: 0;
   text-align: left;
 }
+.tg-tool-card[href] { text-decoration: none; }
 
 .tg-introduction-player { overflow: hidden; border: 1px solid rgba(123, 205, 173, .35); border-radius: 24px; background: #101c30; box-shadow: 0 20px 50px rgba(16, 28, 48, .14); }
 .tg-introduction-player video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; }

@@ -5,7 +5,8 @@
       "root": "frontend/",
       "framework": "vite",
       "rewrites": [
-        { "source": "/caller", "destination": "/index.html" }
+        { "source": "/caller", "destination": "/index.html" },
+        { "source": "/media", "destination": "/index.html" }
       ]
     },
     "backend": {

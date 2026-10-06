@@ -34,7 +34,7 @@ import "./App.css";
 import { LiveGuardGuide } from "./components/UsageHelp.jsx";
 
 const LiveGuardPage = lazy(() => import("./pages/LiveGuard.jsx"));
-const MediaAnalysisPage = lazy(() => import("./pages/MediaAnalysis.jsx"));
+import MediaAnalysisPage from "./pages/MediaAnalysis.jsx";
 
 function PageLoader() {
   return (
@@ -376,7 +376,7 @@ function ScamFieldNotes() {
 }
 
 function App() {
-  const [activePage, setActivePage] = useState("home");
+  const [activePage, setActivePage] = useState(() => window.location.pathname.replace(/\/+$/, "") === "/media" ? "media" : "home");
   const [activeSignal, setActiveSignal] = useState("calls");
   const [visualScene, setVisualScene] = useState(0);
   useRevealOnScroll(activePage);
@@ -385,6 +385,10 @@ function App() {
   }, [activePage]);
 
   const goHome = () => {
+    if (window.location.pathname.replace(/\/+$/, "") === "/media") {
+      window.location.assign("/");
+      return;
+    }
     setActivePage("home");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -492,11 +496,11 @@ function App() {
               <span className="tg-card-arrow" aria-hidden="true"><ArrowUpRight size={17} /></span>
             </button>
 
-            <button className="tg-tool-card media-card tg-tilt-card" type="button" onClick={() => setActivePage("media")} onPointerMove={tiltCard} onPointerLeave={resetTilt} data-reveal data-reveal-delay="1">
+            <a className="tg-tool-card media-card tg-tilt-card" href="/media" onPointerMove={tiltCard} onPointerLeave={resetTilt} data-reveal data-reveal-delay="1">
               <span className="tg-tool-illustration media-illustration" aria-hidden="true"><span className="media-file file-front"><ImageIcon size={22} /><span /></span><span className="media-file file-back"><AudioLines size={23} /></span><span className="media-scan-line" /></span>
-              <span className="tg-card-content"><span className="tg-card-kicker">IMAGE · AUDIO · VIDEO</span><strong>Media Analysis</strong><span className="tg-card-description">Look for media-integrity clues and signs that deserve a closer review.</span><span className="tg-card-link">Choose a file <b>→</b></span></span>
+              <span className="tg-card-content"><span className="tg-card-kicker">IMAGE · AUDIO · VIDEO</span><strong>Media Analysis</strong><span className="tg-card-description">Look for media-integrity clues and signs that deserve a closer review.</span><span className="tg-card-link">Open Media Analysis <b>→</b></span></span>
               <span className="tg-card-arrow" aria-hidden="true"><ArrowUpRight size={17} /></span>
-            </button>
+            </a>
           </div>
         </section>
 
