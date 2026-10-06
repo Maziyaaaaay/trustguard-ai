@@ -31,6 +31,7 @@ import {
   WalletCards,
 } from "lucide-react";
 import "./App.css";
+import { LiveGuardGuide } from "./components/UsageHelp.jsx";
 
 const LiveGuardPage = lazy(() => import("./pages/LiveGuard.jsx"));
 const MediaAnalysisPage = lazy(() => import("./pages/MediaAnalysis.jsx"));
@@ -412,6 +413,7 @@ function App() {
 
         <nav className="tg-nav" aria-label="Main navigation">
           <button className="tg-nav-item active" type="button" aria-current="page" onClick={goHome}>Overview</button>
+          <a className="tg-nav-item" href="#liveguard-guide">How to use</a>
           <button className="tg-nav-item" type="button" onClick={() => setActivePage("liveguard")}>Live Guard</button>
           <button className="tg-nav-item" type="button" onClick={() => setActivePage("media")}>Media Analysis</button>
         <a className="tg-nav-specialist" href="https://wa.me/919497964163" target="_blank" rel="noopener noreferrer">CyberWall <ArrowUpRight size={13} /></a>
@@ -466,6 +468,10 @@ function App() {
               Your browser does not support embedded video. <a href="/media/trustguard-introduction.mp4">Watch the introduction</a>.
             </video>
           </div>
+        </section>
+
+        <section id="liveguard-guide" className="tg-section-space" aria-label="How to use Live Guard">
+          <LiveGuardGuide />
         </section>
 
         <FraudActivitySnapshot />

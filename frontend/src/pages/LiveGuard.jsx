@@ -11,6 +11,7 @@ import {
   scoreTemporalSignals,
 } from "./liveGuardMetrics";
 import "./LiveGuard.css";
+import { LiveGuardGuide } from "../components/UsageHelp.jsx";
 
 const LANDMARK_MODEL =
   "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
@@ -3019,6 +3020,8 @@ function LiveGuard({ onBack })  {
         </div>
 
       </div>
+
+      <LiveGuardGuide />
 
       {warningVisible && (
         <div
