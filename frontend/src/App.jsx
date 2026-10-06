@@ -16,6 +16,9 @@ import {
   Image as ImageIcon,
   LockKeyhole,
   MessageCircleWarning,
+  Newspaper,
+  Smartphone,
+  CircleDollarSign,
   ScanFace,
   Shield,
   ShieldAlert,
@@ -199,6 +202,58 @@ function resetTilt(event) {
   event.currentTarget.style.setProperty("--tilt-y", "0deg");
 }
 
+const fieldNotes = [
+  {
+    number: "01", category: "IMPERSONATION · LIVE CALLS", title: "The call that becomes a ‘digital arrest’",
+    date: "14 MAY 2024", source: "Ministry of Home Affairs · PIB",
+    summary: "A caller claims to be police, CBI, or another authority, invents a parcel or criminal case, then uses threats and a video call to keep the target under pressure.",
+    action: "Hang up. Contact the agency through a number you find independently; never transfer money to ‘prove’ your innocence.",
+    href: "https://www.pib.gov.in/Pressreleaseshare.aspx?PRID=2020570&lang=2&reg=48", icon: ShieldAlert, tone: "arrest",
+  },
+  {
+    number: "02", category: "MONEY MULES · BANKING", title: "The ‘easy commission’ that rents your account",
+    date: "28 OCT 2024", source: "Indian Cyber Crime Coordination Centre · PIB",
+    summary: "Fraudsters recruit people to receive and forward funds through their bank accounts, sometimes promising a cut. The account holder can become part of an illegal money trail.",
+    action: "Never lend or rent your account, card, or credentials. If you already shared access, contact your bank and report it promptly.",
+    href: "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2069000&lang=2&reg=3", icon: CircleDollarSign, tone: "mule",
+  },
+  {
+    number: "03", category: "MALICIOUS APK · SMS BAIT", title: "A fake challan with a dangerous attachment",
+    date: "17 MAR 2026", source: "CERT-In · Security Advisory",
+    summary: "A traffic-fine message can be the lure for a malicious Android app. Installing an APK from an unsolicited message may expose financial information or enable unauthorized activity.",
+    action: "Do not install APKs from SMS or chat links. Check a challan using the official transport portal or app store listing.",
+    href: "https://www.cert-in.org.in/s2cMainServlet?CACODE=CICA-2026-3492&pageid=PUBADV01", icon: Smartphone, tone: "apk",
+  },
+];
+
+function ScamFieldNotes() {
+  return (
+    <section className="tg-field-notes" id="field-notes" aria-labelledby="field-notes-heading">
+      <div className="tg-field-orb field-orb-one" aria-hidden="true" />
+      <div className="tg-field-orb field-orb-two" aria-hidden="true" />
+      <div className="tg-field-inner">
+        <div className="tg-field-heading" data-reveal>
+          <div><p className="tg-eyebrow"><Newspaper size={14} /> THE TRUSTGUARD FIELD DESK</p><h2 id="field-notes-heading">Scams change shape.<br /><em>Know the pattern.</em></h2></div>
+          <p>Original, practical explainers based on official Indian cyber-safety advisories. These are curated field notes, not a live news feed.</p>
+        </div>
+        <div className="tg-field-grid">
+          {fieldNotes.map(({ number, category, title, date, source, summary, action, href, icon: Icon, tone }, index) => (
+            <article className={`tg-field-card field-${tone}`} key={number} data-reveal data-reveal-delay={index ? "1" : undefined}>
+              <div className="tg-field-card-top"><span className="tg-field-number">{number} / 03</span><span className="tg-field-icon"><Icon size={19} /></span></div>
+              <p className="tg-field-category">{category}</p>
+              <h3>{title}</h3>
+              <p className="tg-field-summary">{summary}</p>
+              <div className="tg-field-action"><strong>TAKE A BEAT</strong><p>{action}</p></div>
+              <footer><span><b>{date}</b><small>{source}</small></span><a href={href} target="_blank" rel="noopener noreferrer" aria-label={`Read the official ${source} source for ${title}`}>SOURCE <ArrowUpRight size={14} /></a></footer>
+            </article>
+          ))}
+        </div>
+        <p className="tg-field-disclaimer">Each note summarizes the linked advisory in our own words. Verify urgent claims with the relevant institution. TrustGuard’s own scores are prototype risk indicators, not a verdict.</p>
+      </div>
+    </section>
+  );
+}
+
 function App() {
   const [activePage, setActivePage] = useState("home");
   const [activeSignal, setActiveSignal] = useState("calls");
@@ -253,14 +308,14 @@ function App() {
           <div className="tg-hero-backdrop" aria-hidden="true" />
           <div className="tg-hero-copy" data-reveal>
             <p className="tg-eyebrow"><span /> MULTIMODAL RISK SIGNALS <span className="tg-eyebrow-separator">·</span> BUILT FOR REAL LIFE</p>
-            <h1>Pause. Check.<br /><em>Then decide.</em></h1>
-            <p className="tg-intro">One friendly place to check a call, a clip, or a message that does not feel quite right.</p>
+            <h1>Fraud moves fast.<br /><em>Take back a second.</em></h1>
+            <p className="tg-intro">Bring a suspicious call or media file into focus. TrustGuard gathers visible risk signals, explains what triggered them, and helps you choose a safer next step.</p>
             <p className="tg-note">TrustGuard highlights signals for review. It cannot prove that a caller, file, or request is genuine.</p>
             <div className="tg-hero-actions">
-              <button className="tg-button-primary" type="button" onClick={() => setActivePage("media")}>
-                Check a file <ArrowRight size={16} />
+              <button className="tg-button-primary" type="button" onClick={() => setActivePage("liveguard")}>
+                Check a live call <ArrowRight size={16} />
               </button>
-              <a className="tg-button-quiet" href="#how-it-works">Explore how it works <ArrowDown size={14} /></a>
+              <button className="tg-button-quiet" type="button" onClick={() => setActivePage("media")}>Analyze media <ArrowDown size={14} /></button>
             </div>
             <div className="tg-hero-proof"><span><Check size={13} /> Calls</span><span><Check size={13} /> Images & video</span><span><Check size={13} /> Scam signals</span></div>
           </div>
@@ -371,6 +426,8 @@ function App() {
             </article>
           </div>
         </section>
+
+        <ScamFieldNotes />
 
         <section className="tg-final-note" data-reveal>
           <div className="tg-final-icon"><ShieldCheck size={25} /></div>

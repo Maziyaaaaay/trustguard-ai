@@ -381,3 +381,155 @@
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   [data-reveal] { opacity: 1; transform: none; }
 }
+
+/* Editorial refresh: high contrast ink, warm paper, electric mint and lilac. */
+.tg-app {
+  --ink: #18213b;
+  --ink-soft: #34405e;
+  --muted: #68718a;
+  --line: #e1e4ec;
+  --green: #176e62;
+  --green-dark: #102f39;
+  --mint: #d9f8e9;
+  --lavender: #e9e2ff;
+  --coral: #ffe6d8;
+  color: var(--ink);
+  background: #f8f7f3;
+  font-family: "Avenir Next", Avenir, ui-sans-serif, system-ui, sans-serif;
+}
+.tg-header { padding-inline: clamp(20px, 6.5vw, 104px); border-color: rgba(26,35,59,.1); background: rgba(250,249,246,.86); }
+.tg-brand-mark { color: #e5fff1; background: linear-gradient(145deg,#173a47,#176e62); box-shadow: 0 8px 21px #123f3926; }
+.tg-brand-copy strong,.tg-nav-item,.tg-nav-specialist { font-family: "Space Grotesk", sans-serif; }
+.tg-nav-item,.tg-nav-specialist { color:#6e7485; }
+.tg-nav-item:hover,.tg-nav-specialist:hover { color:#153e49;background:#e9f3ee; }
+.tg-nav-item.active { color:#163c46;background:#e5f2ea; }
+.tg-header-status i,.tg-art-caption i { background:#3cbb88; box-shadow:0 0 0 4px #3cbb8820; }
+.tg-main { width:min(1220px,calc(100% - 60px)); }
+.tg-hero { min-height:660px; padding:82px 2% 64px; }
+.tg-hero::before { content:""; position:absolute; z-index:-2; inset:14px -4vw 0 -4vw; border-radius:34px; background:linear-gradient(115deg,#f6f3eb 4%,#eef7f3 48%,#f0ecff 100%); }
+.tg-hero::after { width:min(67vw,820px); background:radial-gradient(ellipse at 72% 39%,#a6e9d580,transparent 49%),radial-gradient(ellipse at 63% 76%,#d3c6ff78,transparent 53%); animation:hero-bloom 11s ease-in-out infinite alternate; }
+.tg-hero-backdrop { background:radial-gradient(370px circle at var(--pointer-x,68%) var(--pointer-y,42%),#ffffffa6,transparent 73%); }
+.tg-hero-copy { padding-left:2%; }
+.tg-eyebrow { color:#167b69; font-family:"Avenir Next", Avenir, ui-sans-serif, sans-serif; font-size:10px; letter-spacing:.15em; }
+.tg-eyebrow > span:first-child,.tg-footer-dot { background:#45b786; }
+.tg-hero h1,.tg-section-heading h2,.tg-signal-copy h2,.tg-field-heading h2 { font-family:"Avenir Next", Avenir, ui-sans-serif, sans-serif; }
+.tg-hero h1 { max-width:650px; color:#17213a; font-size:clamp(58px,7.2vw,90px); font-weight:650; letter-spacing:-.08em; line-height:.96; }
+.tg-hero h1 em,.tg-signal-copy h2 em,.tg-field-heading h2 em { color:#167765; font-family:Georgia, "Times New Roman", serif; font-weight:400; letter-spacing:-.055em; }
+.tg-intro { max-width:500px; color:#4c5871; font-size:16px; line-height:1.72; }
+.tg-note { color:#747d91; font-size:10px; }
+.tg-button-primary { min-height:49px; padding-inline:21px; border-radius:999px; color:#f1fff7; background:linear-gradient(110deg,#163d49,#167968); box-shadow:0 11px 23px #16564a2a; transition:transform .2s ease,box-shadow .2s ease; }
+.tg-button-primary:hover { transform:translateY(-3px);box-shadow:0 16px 30px #16564a3b; }
+.tg-button-quiet { color:#304057; }
+.tg-hero-proof { color:#56647a; }
+.tg-hero-proof svg { color:#1a9670; }
+.tg-hero-art-wrap { transform:rotate(.5deg); }
+.tg-art-caption,.tg-art-footnote { color:#68718a; }
+.tg-hero-art { border-color:#ffffffbf; border-radius:29px; box-shadow:0 26px 75px #273b4924; animation:hero-card-float 7s ease-in-out infinite; }
+.tg-world-art { filter:saturate(.82); }
+.tg-scroll-cue { color:#67738b; }
+.tg-scroll-cue > span { background:#25836d; }
+.tg-motion-ribbon { margin-inline:-10vw; border-color:#dcf5e9; color:#174d47; background:#e2f5eb; }
+.tg-ribbon-group > i { color:#8c6bd9; }
+.tg-section-space { padding-top:86px; }
+.tg-section-heading h2 { color:#19243c; font-weight:620; letter-spacing:-.055em; }
+.tg-section-caption { color:#778095; }
+.tg-tool-card { border-color:#e5e2dc; background:#fffefa; box-shadow:0 18px 46px #27334b0c; }
+.tg-tool-card.live-card { background:linear-gradient(120deg,#fffefa,#e8f7ef); }
+.tg-tool-card.media-card { background:linear-gradient(120deg,#fffefa,#f1edff); }
+.tg-tool-card:hover { border-color:#abd9c8;box-shadow:0 24px 56px #27334b18; }
+.tg-card-kicker { color:#798197; }
+.tg-card-content > strong,.tg-flow-card h3,.tg-specialist-body h3 { color:#1b2741;font-family:"Avenir Next", Avenir, ui-sans-serif, sans-serif; }
+.tg-card-description,.tg-signal-detail p,.tg-flow-card p,.tg-specialist-body p { color:#68738a; }
+.tg-card-link,.tg-signal-detail > button,.tg-signal-detail > a,.tg-specialist-body a { color:#167563; }
+.live-illustration-screen { color:#fff;background:linear-gradient(145deg,#214658,#168c79);box-shadow:0 15px 24px #1c665b38; }
+.live-illustration-orbit { border-color:#78dcb4; }
+.live-face { background:#f1b9a0; }
+.tg-signal-copy h2 { color:#1a2540; }
+.tg-signal-copy h2 em { color:#6752a2; }
+.tg-signal-copy > p:not(.tg-eyebrow) { color:#6c758a; }
+.tg-signal-tabs button { border-color:#e2e3e9;color:#606a80;background:#fffefa; }
+.tg-signal-tabs button.is-active { border-color:#b4ddcf;color:#176e62;background:#e9f7ef; }
+.tg-signal-panel { border-color:#e5e3df;background:linear-gradient(130deg,#fffefa,#f7f4ee);box-shadow:0 24px 54px #27334b12; }
+.tg-signal-picture { background:linear-gradient(145deg,#ddf4e9,#cde9e8); }
+.signal-media { background:linear-gradient(145deg,#eee8ff,#e4e8ff); }
+.signal-money { background:linear-gradient(145deg,#fff1d8,#f8e5c8); }
+.signal-links { background:linear-gradient(145deg,#e2f5ef,#ddedfa); }
+.tg-how-section .tg-flow-card { border-color:#e6e2dc;background:#fffefa;box-shadow:0 14px 35px #27334b0a; }
+.tg-flow-line { border-color:#9bcdb6; }
+.tg-flow-line > span { background:#2aa17b; }
+.flow-capture { color:#117863;background:#e2f5e9; }
+.flow-scan { color:#7359b2;background:#eee8ff; }
+.flow-decide { color:#a65e38;background:#ffeadc; }
+.tg-risk-scale { border-color:#dedbea;background:linear-gradient(115deg,#e8f6ed,#f1edff 68%,#fff0e5); }
+.tg-risk-copy h2 { color:#1c2942; }
+.risk-level { background:#fffefa; }
+.tg-specialist-card { border-color:#e5e2dc;background:#fffefa; }
+.specialist-news .tg-specialist-art { background:linear-gradient(145deg,#e7f3e8,#d3e9dd); }
+.specialist-cyber .tg-specialist-art { background:linear-gradient(145deg,#ece8fb,#dfe9f7); }
+.tg-final-note { border:1px solid #d9e8df;background:linear-gradient(110deg,#e3f5eb,#e9e4ff); }
+.tg-final-icon { background:linear-gradient(145deg,#193f49,#16866e); }
+.tg-final-note h2 { color:#19243e;font-family:"Avenir Next", Avenir, ui-sans-serif, sans-serif; }
+.tg-final-note > button { color:#185d53;background:#fffefa; }
+.tg-footer { border-color:#e1e2e7;color:#7b8292; }
+
+.tg-field-notes { position:relative; margin:96px calc((min(1220px,100vw - 60px) - 100vw)/2) 0; padding:104px max(30px,calc((100vw - 1220px)/2)) 76px; color:#f6f5f0; background:#18233b; isolation:isolate; overflow:hidden; }
+.tg-field-notes::before { content:""; position:absolute; z-index:-1; inset:0; opacity:.16; background-image:linear-gradient(#afc5e31a 1px,transparent 1px),linear-gradient(90deg,#afc5e31a 1px,transparent 1px); background-size:55px 55px; mask-image:linear-gradient(90deg,transparent,#000 24%,#000 76%,transparent); }
+.tg-field-orb { position:absolute; z-index:-1; width:430px;height:430px;border-radius:50%;filter:blur(2px);pointer-events:none; }
+.field-orb-one { top:-245px;right:5%;background:radial-gradient(circle,#43d5a54a,transparent 68%);animation:orb-drift 18s ease-in-out infinite alternate; }
+.field-orb-two { bottom:-270px;left:12%;background:radial-gradient(circle,#8b6eff3d,transparent 68%);animation:orb-drift 23s ease-in-out infinite alternate-reverse; }
+.tg-field-inner { width:min(1220px,100%);margin:0 auto; }
+.tg-field-heading { display:flex;align-items:flex-end;justify-content:space-between;gap:36px;margin-bottom:34px; }
+.tg-field-heading .tg-eyebrow { display:flex;align-items:center;gap:9px;color:#74e0b7; }
+.tg-field-heading h2 { margin:0;color:#faf8f2;font-size:clamp(42px,6vw,68px);line-height:.98;letter-spacing:-.075em; }
+.tg-field-heading h2 em { color:#8fe5bd; }
+.tg-field-heading > p { max-width:340px;margin:0 0 5px;color:#aeb7ca;font-size:13px;line-height:1.7; }
+.tg-field-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px; }
+.tg-field-card { --accent:#71ddb4;position:relative;min-height:465px;padding:23px 22px 19px;display:flex;flex-direction:column;border:1px solid #ffffff20;border-radius:17px;background:linear-gradient(145deg,#ffffff0d,#ffffff06);backdrop-filter:blur(12px);transition:transform .28s ease,border-color .28s ease,background .28s ease;overflow:hidden; }
+.tg-field-card::after { content:"";position:absolute;top:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);transform:translateX(-100%);transition:transform .65s ease; }
+.tg-field-card:hover { transform:translateY(-7px);border-color:#ffffff48;background:linear-gradient(145deg,#ffffff16,#ffffff09); }
+.tg-field-card:hover::after { transform:translateX(100%); }
+.field-mule { --accent:#b6a2ff; }
+.field-apk { --accent:#ffc38d; }
+.tg-field-card-top { display:flex;align-items:center;justify-content:space-between; }
+.tg-field-number { color:#929db3;font-family:"Avenir Next", Avenir, ui-sans-serif, sans-serif;font-size:10px;letter-spacing:.15em; }
+.tg-field-icon { width:42px;height:42px;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--accent),transparent 70%);border-radius:14px;color:var(--accent);background:color-mix(in srgb,var(--accent),transparent 90%); }
+.tg-field-category { margin:25px 0 10px;color:var(--accent);font-family:"Avenir Next", Avenir, ui-sans-serif, sans-serif;font-size:9px;font-weight:700;letter-spacing:.13em; }
+.tg-field-card h3 { min-height:63px;margin:0;color:#fffdf8;font-family:"Avenir Next", Avenir, ui-sans-serif, sans-serif;font-size:21px;font-weight:540;line-height:1.2;letter-spacing:-.045em; }
+.tg-field-summary { margin:13px 0 0;color:#bec5d3;font-size:12px;line-height:1.72; }
+.tg-field-action { margin-top:19px;padding:14px 14px 13px;border-left:2px solid var(--accent);background:#ffffff0a; }
+.tg-field-action strong { color:var(--accent);font-family:"Avenir Next", Avenir, ui-sans-serif, sans-serif;font-size:8px;letter-spacing:.14em; }
+.tg-field-action p { margin:6px 0 0;color:#e2e3e7;font-size:10px;line-height:1.65; }
+.tg-field-card footer { margin-top:auto;padding-top:20px;display:flex;align-items:flex-end;justify-content:space-between;gap:10px; }
+.tg-field-card footer > span { display:grid;gap:5px; }
+.tg-field-card footer b { color:#e8e8e9;font-family:"Avenir Next", Avenir, ui-sans-serif, sans-serif;font-size:8px;letter-spacing:.12em; }
+.tg-field-card footer small { color:#9fa8bc;font-size:9px;line-height:1.4; }
+.tg-field-card footer a { display:inline-flex;align-items:center;gap:4px;color:var(--accent);font-family:"Avenir Next", Avenir, ui-sans-serif, sans-serif;font-size:9px;font-weight:700;letter-spacing:.1em;text-decoration:none;white-space:nowrap; }
+.tg-field-card footer a:hover { gap:8px; }
+.tg-field-disclaimer { margin:20px 0 0;color:#a9b1c2;font-size:10px;line-height:1.6; }
+
+@keyframes hero-bloom { to { transform:translate3d(-2%,2%,0) scale(1.04); } }
+@keyframes hero-card-float { 0%,100% { transform:translateY(0) rotate(.5deg); } 50% { transform:translateY(-8px) rotate(-.25deg); } }
+@keyframes orb-drift { from { transform:translate3d(-5%,0,0) scale(.95); } to { transform:translate3d(7%,10%,0) scale(1.12); } }
+
+@media (max-width:760px) {
+  .tg-main { width:min(100% - 32px,560px); }
+  .tg-hero { min-height:auto;padding-top:48px; }
+  .tg-hero::before { inset:7px -16px 0;border-radius:24px; }
+  .tg-hero h1 { font-size:clamp(47px,11.7vw,66px); }
+  .tg-hero-art { border-radius:19px; }
+  .tg-section-space { padding-top:66px; }
+  .tg-field-notes { margin:72px -16px 0;padding:70px 16px 51px; }
+  .tg-field-heading { align-items:flex-start;flex-direction:column;gap:17px;margin-bottom:23px; }
+  .tg-field-heading h2 { font-size:clamp(42px,10vw,58px); }
+  .tg-field-heading > p { font-size:12px; }
+  .tg-field-grid { grid-template-columns:1fr;gap:11px; }
+  .tg-field-card { min-height:0;padding:20px; }
+  .tg-field-category { margin-top:19px; }
+  .tg-field-card h3 { min-height:0;font-size:21px; }
+  .tg-field-summary { font-size:12px; }
+  .tg-field-card footer { margin-top:18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tg-hero::after,.tg-hero-art,.field-orb-one,.field-orb-two { animation:none!important; }
+}
