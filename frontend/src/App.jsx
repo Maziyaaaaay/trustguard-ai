@@ -456,6 +456,19 @@ function App() {
           </div>
         </div>
 
+        <section className="tg-introduction tg-section-space" aria-labelledby="introduction-heading">
+          <div className="tg-section-heading">
+            <div><p className="tg-eyebrow">THE IDEA IN 30 SECONDS</p><h2 id="introduction-heading">Pause. Check. Then decide.</h2></div>
+            <span className="tg-section-caption">Watch the TrustGuard story.</span>
+          </div>
+          <div className="tg-introduction-player">
+            <video controls playsInline preload="none" poster="/media/trustguard-introduction-poster.jpg" aria-label="TrustGuard AI introduction, 30 seconds">
+              <source src="/media/trustguard-introduction.mp4" type="video/mp4" />
+              Your browser does not support embedded video. <a href="/media/trustguard-introduction.mp4">Watch the introduction</a>.
+            </video>
+          </div>
+        </section>
+
         <FraudActivitySnapshot />
 
         <section className="tg-tools-section tg-section-space" id="check-signal" aria-labelledby="tools-heading">
