@@ -7,7 +7,10 @@ const ACCEPTED_EXTENSIONS = new Set([
   "mp4", "mov", "webm",
   "wav", "mp3", "m4a",
 ]);
-const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = import.meta.env.PROD
+  ? 4 * 1024 * 1024
+  : 50 * 1024 * 1024;
+const MAX_UPLOAD_LABEL = import.meta.env.PROD ? "4 MB" : "50 MB";
 
 const SIGNAL_LABELS = {
   synthetic_voice: "Acoustic anomaly (not a voice-clone detector)",
@@ -93,7 +96,7 @@ export default function MediaAnalysisPage({ onBack }) {
   const chooseFile = (candidate) => {
     if (!candidate) return;
     if (candidate.size > MAX_UPLOAD_BYTES) {
-      setError("Files must be 50 MB or smaller. Choose a shorter or smaller media file.");
+      setError(`Files must be ${MAX_UPLOAD_LABEL} or smaller. Choose a shorter or smaller media file.`);
       return;
     }
     const extension = candidate.name.split(".").pop()?.toLowerCase();
@@ -156,7 +159,7 @@ export default function MediaAnalysisPage({ onBack }) {
             <p className="ma-subtitle">Inspect an image, audio clip, or video for signals that may need review.</p>
           </div>
         </div>
-        <span className="ma-api-badge"><i /> Local analysis</span>
+        <span className="ma-api-badge"><i /> TrustGuard analysis</span>
       </header>
 
       <section className="ma-layout">
