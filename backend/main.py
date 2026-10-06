@@ -3462,6 +3462,8 @@ def analyze_wav_audio(wav_path: str) -> Dict[str, Any]:
             "silence_percent": round(silence, 2),
             "spectral_flatness": round(spectral_flatness, 4),
             "synthetic_voice": synthetic_risk,
+            "audio_quality_score": synthetic_risk,
+            "synthetic_speech_status": "not_assessed",
             "reasons": acoustic_reasons,
             "method": "Acoustic heuristic signals; not a trained synthetic-voice classifier.",
         }
@@ -3757,14 +3759,10 @@ def analyze_image_media(content: bytes, filename: str, content_type: str) -> Dic
         integrity = analyze_image_integrity(image)
         ocr = perform_ocr(image)
         metadata_result = analyze_metadata(metadata, filename, False)
-        ai_result = analyze_ai_indicators(ocr.get("text", ""), metadata_result, integrity)
-
-        face_risk = 0 if faces.get("detected") else 10
+        # Document OCR, editor metadata and absence of faces are not evidence
+        # that an ordinary photograph was AI-generated.
         combined_score = clamp_score(
-            integrity.get("risk", 0) * 0.45
-            + ai_result.get("risk", 0) * 0.30
-            + metadata_result.get("risk", 0) * 0.15
-            + face_risk * 0.10
+            integrity.get("risk", 0)
         )
 
         return {
@@ -3773,24 +3771,18 @@ def analyze_image_media(content: bytes, filename: str, content_type: str) -> Dic
             "media_type": "IMAGE",
             "risk": combined_score,
             "signals": {
-                "synthetic_voice": 0,
-                "face_manipulation": face_risk,
-                "media_manipulation": integrity.get("risk", 0),
-                "identity_consistency": 100 if faces.get("detected") else 0,
-                "replay_risk": 0,
-                "ai_synthetic_indicator": ai_result.get("risk", 0),
-                "metadata_risk": metadata_result.get("risk", 0),
-                "ocr_confidence": ocr.get("confidence", 0),
+                "image_quality_anomaly": combined_score,
             },
             "face": faces,
             "ocr": ocr,
             "metadata": metadata_result,
             "forensics": integrity,
-            "ai_indicators": ai_result,
+            "ai_indicators": {"status": "not_assessed", "method": "No trained image AI detector is configured."},
             "findings": [
                 "Image evidence analyzed without audio/voice signals.",
                 f"Face detection: {'detected' if faces.get('detected') else 'not detected'}.",
-                *ai_result.get("indicators", []),
+                "Image quality and recompression can reflect normal editing or compression, not AI generation.",
+                "AI generation was not assessed. Missing text or a missing face is not evidence of AI generation.",
             ],
             "analysis_note": (
                 "Image authenticity values are heuristic indicators and should not be treated as definitive proof of manipulation."
@@ -3835,17 +3827,12 @@ async def _analyze_media(file: UploadFile):
         if result.get("success"):
             result["kind"] = "audio"
             result["media_type"] = "AUDIO"
-            result["risk"] = result.get("synthetic_voice", 0)
+            result["risk"] = result.get("audio_quality_score", 0)
             result["signals"] = {
-                "synthetic_voice": result.get("synthetic_voice", 0),
-                "face_manipulation": 0,
-                "media_manipulation": 0,
-                "identity_consistency": 0,
-                "replay_risk": 0,
-                "ai_synthetic_indicator": result.get("synthetic_voice", 0),
+                "audio_quality_anomaly": result.get("audio_quality_score", 0),
             }
             result["findings"] = result.get("reasons", []) or [
-                "No strong acoustic anomaly detected by the available heuristics."
+                "No strong audio-quality anomaly detected. AI-generated speech was not assessed."
             ]
             result["analysis_note"] = (
                 "Audio results are acoustic heuristics, not definitive proof of synthetic speech."
@@ -3896,7 +3883,8 @@ async def _analyze_media(file: UploadFile):
         "media_type": result.get("media_type", kind.upper()),
         "risk": {
             "score": risk_score,
-            "level": get_risk_level(risk_score),
+            "level": get_risk_level(risk_score) if kind == "video" else "UNVERIFIED",
+            "scope": "temporal_anomalies" if kind == "video" else "media_quality",
         },
         "authenticity": {
             "status": "unverified",
@@ -3916,10 +3904,10 @@ async def _analyze_media(file: UploadFile):
         "summary": (
             "Authenticity unverified. Few anomalies were found by basic signal checks; AI-generated media can pass these checks."
             if risk_score < 30
-            else "One or more media authenticity signals warrant review."
+            else "Quality or temporal anomalies warrant review. These do not establish AI generation or fraud."
         ),
         "recommendation": (
-            build_recommendation("HIGH") if risk_score > 50 else
+            build_recommendation("HIGH") if kind == "video" and risk_score > 50 else
             "Verify the source and obtain independent evidence before acting. AI generation and authenticity remain unverified."
         ),
         "analysis_note": result.get(

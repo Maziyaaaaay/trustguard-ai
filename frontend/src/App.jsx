@@ -380,6 +380,9 @@ function App() {
   const [activeSignal, setActiveSignal] = useState("calls");
   const [visualScene, setVisualScene] = useState(0);
   useRevealOnScroll(activePage);
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [activePage]);
 
   const goHome = () => {
     setActivePage("home");
