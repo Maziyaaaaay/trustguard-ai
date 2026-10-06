@@ -16,6 +16,8 @@ function Caller() {
   const fileVideoTrackRef = useRef(null);
   const objectUrlRef = useRef(null);
   const animationFrameRef = useRef(null);
+  const startCallerRef = useRef(null);
+  const cleanupCallerRef = useRef(null);
 
   const [peerId, setPeerId] = useState("");
   const [connected, setConnected] = useState(false);
@@ -28,12 +30,12 @@ function Caller() {
   const [error, setError] = useState("");
   const [switchingVideo, setSwitchingVideo] = useState(false);
 
-  useEffect(() => {
-    startCaller();
+  startCallerRef.current = startCaller;
+  cleanupCallerRef.current = cleanupCaller;
 
-    return () => {
-      cleanupCaller();
-    };
+  useEffect(() => {
+    startCallerRef.current?.();
+    return () => cleanupCallerRef.current?.();
   }, []);
 
   async function startCaller() {
@@ -710,7 +712,7 @@ function Caller() {
           }`}
         >
           <span />
-          {connected ? "CALL SERVICE READY" : "CONNECTING"}
+          {connected ? "CALL SERVICE READY" : status.toUpperCase()}
         </div>
       </header>
 

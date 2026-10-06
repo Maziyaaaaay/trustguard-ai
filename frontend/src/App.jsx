@@ -167,38 +167,40 @@ function SafeWorldIllustration() {
   );
 }
 
-function SignalScene() {
+function MediaAnalysisScene() {
   return (
-    <svg className="tg-scene-svg" viewBox="0 0 650 500" role="img" aria-label="Illustration of call, video and audio signals being reviewed around a central trust indicator">
-      <defs><radialGradient id="signal-bg"><stop stopColor="#31496b"/><stop offset="1" stopColor="#17253d"/></radialGradient><linearGradient id="signal-stroke"><stop stopColor="#77e3b9"/><stop offset="1" stopColor="#a996f5"/></linearGradient></defs>
-      <rect width="650" height="500" rx="36" fill="url(#signal-bg)" />
+    <svg className="tg-scene-svg" viewBox="0 0 650 500" role="img" aria-label="Image, audio, and video files being inspected for visible media clues and a review-only risk indicator">
+      <defs><radialGradient id="media-bg"><stop stopColor="#31496b"/><stop offset="1" stopColor="#17253d"/></radialGradient></defs>
+      <rect width="650" height="500" rx="36" fill="url(#media-bg)" />
       <g className="scene-grid"><path d="M0 100H650M0 200H650M0 300H650M0 400H650M130 0V500M260 0V500M390 0V500M520 0V500" /></g>
-      <circle cx="325" cy="245" r="150" className="scene-orbit orbit-a"/><circle cx="325" cy="245" r="112" className="scene-orbit orbit-b"/>
-      <g className="scene-center"><path d="M325 147l72 27v58c0 54-36 89-72 110-36-21-72-56-72-110v-58z" fill="#123c45" stroke="#80e0bd" strokeWidth="3"/><path d="m294 229 21 21 43-48" fill="none" stroke="#95f0c7" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/><text x="325" y="283" textAnchor="middle" className="scene-label">SIGNAL REVIEW</text></g>
-      <g className="scene-node node-call"><rect x="48" y="93" width="146" height="94" rx="18"/><circle cx="83" cy="128" r="17"/><path d="M76 128h14m-7-7v14"/><text x="108" y="126">CALL</text><text x="108" y="147" className="scene-sub">movement cue</text></g>
-      <g className="scene-node node-media"><rect x="452" y="92" width="151" height="94" rx="18"/><rect x="474" y="113" width="43" height="40" rx="8"/><path d="m491 123 14 9-14 9z"/><text x="527" y="126">MEDIA</text><text x="527" y="147" className="scene-sub">frame signals</text></g>
-      <g className="scene-node node-audio"><rect x="68" y="343" width="166" height="86" rx="18"/><path d="M89 387h8l7-17 9 34 9-26 7 9h13"/><text x="151" y="380">AUDIO</text><text x="151" y="401" className="scene-sub">acoustic clues</text></g>
-      <g className="scene-node node-context"><rect x="412" y="343" width="188" height="86" rx="18"/><circle cx="439" cy="386" r="12"/><path d="M434 386h10m-5-5v10"/><text x="462" y="380">CONTEXT</text><text x="462" y="401" className="scene-sub">review, then verify</text></g>
-      <path className="scene-connection" d="M194 155 253 197M452 155 397 197M234 373l52-50m126 50-52-50"/><circle cx="325" cy="245" r="188" className="scene-scan"/>
-      <text x="325" y="470" textAnchor="middle" className="scene-caption">HEURISTIC SIGNALS · NOT A VERDICT</text>
+      <text x="34" y="48" className="media-kicker">UPLOAD A FILE</text>
+      <g className="media-input media-input-image"><rect x="34" y="76" width="168" height="92" rx="15"/><rect x="48" y="90" width="52" height="48" rx="8"/><circle cx="64" cy="104" r="5"/><path d="m51 132 14-15 8 8 9-10 15 17z"/><text x="111" y="116">IMAGE</text><text x="111" y="138" className="media-small">metadata · edges</text></g>
+      <g className="media-input media-input-audio"><rect x="34" y="188" width="168" height="92" rx="15"/><circle cx="75" cy="234" r="24"/><path d="M62 234h5l5-11 7 23 6-17 5 8h7"/><text x="111" y="229">AUDIO</text><text x="111" y="251" className="media-small">silence · spectrum</text></g>
+      <g className="media-input media-input-video"><rect x="34" y="300" width="168" height="92" rx="15"/><rect x="48" y="314" width="52" height="48" rx="8"/><path d="m68 326 15 10-15 10z"/><text x="111" y="341">VIDEO</text><text x="111" y="363" className="media-small">frames · motion</text></g>
+      <path className="media-flow" d="M204 122C245 122 237 221 278 221M204 234h73M204 346c41 0 33-91 74-91"/>
+      <g className="media-inspector"><rect x="275" y="132" width="126" height="220" rx="20"/><text x="338" y="161" textAnchor="middle" className="media-title">INSPECT</text><rect x="292" y="177" width="92" height="57" rx="7" className="media-frame"/><path d="m302 221 19-20 12 11 13-15 27 24z" className="media-frame-landscape"/><path d="m323 195 7-4 8 3 4 8-5 6-8-2z" className="media-face"/><rect x="292" y="246" width="92" height="13" rx="6" className="media-wave-base"/><path className="media-wave" d="M297 253h8l4-5 5 10 6-14 5 12 5-7h7l5 5 6-10 5 8h9"/><rect x="292" y="272" width="92" height="43" rx="6" className="media-film"/><path d="M300 279h76M300 308h76" className="media-film-line"/><path d="M310 280v27m22-27v27m22-27v27" className="media-film-cuts"/><rect x="292" y="326" width="92" height="5" rx="2" className="media-progress-track"/><rect x="292" y="326" width="55" height="5" rx="2" className="media-progress"/></g>
+      <path className="media-flow" d="M402 240h39"/><circle cx="422" cy="240" r="4" className="media-packet"/>
+      <g className="media-result"><rect x="442" y="112" width="174" height="238" rx="19"/><circle cx="470" cy="145" r="14" className="media-result-icon"/><path d="m464 145 4 4 8-9" className="media-check"/><text x="493" y="149" className="media-title">SIGNALS</text><text x="461" y="184" className="media-row-title">Frame changes</text><rect x="461" y="195" width="136" height="7" rx="3" className="media-bar-track"/><rect x="461" y="195" width="82" height="7" rx="3" className="media-bar mint"/><text x="461" y="228" className="media-row-title">File metadata</text><rect x="461" y="239" width="136" height="7" rx="3" className="media-bar-track"/><rect x="461" y="239" width="104" height="7" rx="3" className="media-bar lilac"/><text x="461" y="272" className="media-row-title">Audio clues</text><rect x="461" y="283" width="136" height="7" rx="3" className="media-bar-track"/><rect x="461" y="283" width="67" height="7" rx="3" className="media-bar blue"/><path d="M461 311h136" className="media-divider"/><text x="461" y="332" className="media-note">REVIEW INDICATORS · NOT PROOF</text></g>
+      <text x="325" y="460" textAnchor="middle" className="scene-caption">IMAGE · AUDIO · VIDEO → CLUES FOR REVIEW</text>
     </svg>
   );
 }
 
-function NetworkScene() {
+function WhatsAppNewsScene() {
   return (
-    <svg className="tg-scene-svg" viewBox="0 0 650 500" role="img" aria-label="Illustration mapping suspicious messages, a bank account, an APK and an external identity into a fraud-risk network">
-      <defs><radialGradient id="network-bg"><stop stopColor="#293e60"/><stop offset="1" stopColor="#152239"/></radialGradient></defs>
-      <rect width="650" height="500" rx="36" fill="url(#network-bg)" />
+    <svg className="tg-scene-svg" viewBox="0 0 650 500" role="img" aria-label="A news claim handed from TrustGuard to an external SathyaScan WhatsApp AI-assisted service, which returns sources and context for the user to review">
+      <defs><radialGradient id="whatsapp-bg"><stop stopColor="#293e60"/><stop offset="1" stopColor="#152239"/></radialGradient></defs>
+      <rect width="650" height="500" rx="36" fill="url(#whatsapp-bg)" />
       <g className="scene-grid"><path d="M0 100H650M0 200H650M0 300H650M0 400H650M130 0V500M260 0V500M390 0V500M520 0V500" /></g>
-      <g className="network-links"><path d="M132 133 290 219M520 128 356 218M159 370 286 289M504 369 358 286"/><path d="M130 133 520 128M159 370 504 369" className="network-dash"/></g>
-      <g className="network-core"><circle cx="324" cy="251" r="70"/><circle cx="324" cy="251" r="53"/><path d="M324 207 355 219v25c0 24-15 39-31 49-16-10-31-25-31-49v-25z"/><path d="m311 245 10 10 19-22"/></g>
-      <g className="network-node"><circle cx="132" cy="133" r="45"/><text x="132" y="127" textAnchor="middle">SMS</text><text x="132" y="145" textAnchor="middle" className="scene-sub">urgent link</text></g>
-      <g className="network-node node-purple"><circle cx="520" cy="128" r="45"/><text x="520" y="124" textAnchor="middle">APK</text><text x="520" y="143" textAnchor="middle" className="scene-sub">unknown app</text></g>
-      <g className="network-node node-amber"><circle cx="159" cy="370" r="45"/><text x="159" y="365" textAnchor="middle">BANK</text><text x="159" y="384" textAnchor="middle" className="scene-sub">account trail</text></g>
-      <g className="network-node node-blue"><circle cx="504" cy="369" r="45"/><text x="504" y="365" textAnchor="middle">CALL</text><text x="504" y="384" textAnchor="middle" className="scene-sub">false identity</text></g>
-      <text x="325" y="466" textAnchor="middle" className="scene-caption">CONNECT THE CLUES · VERIFY OUT OF BAND</text>
-      <circle cx="132" cy="133" r="56" className="network-pulse"/><circle cx="520" cy="128" r="56" className="network-pulse pulse-delay"/>
+      <text x="34" y="48" className="wa-kicker">A CLAIM TO CHECK</text>
+      <g className="wa-article"><rect x="35" y="88" width="166" height="265" rx="13"/><rect x="50" y="104" width="136" height="22" rx="4" className="wa-paper-label"/><text x="58" y="119" className="wa-paper-label-text">FORWARDED STORY</text><text x="50" y="157" className="wa-article-title">“A new rule</text><text x="50" y="178" className="wa-article-title">starts tomorrow”</text><path d="M50 193h136" className="wa-rule"/><rect x="50" y="208" width="136" height="69" rx="7" className="wa-news-image"/><path d="M55 266 87 234l21 18 23-28 50 42z" className="wa-news-art"/><path d="M50 293h122M50 305h110M50 317h128" className="wa-article-lines"/><text x="50" y="340" className="wa-source-note">SOURCE NOT SHOWN</text></g>
+      <path className="wa-handoff" d="M207 219h47"/><circle cx="230" cy="219" r="4" className="wa-packet"/>
+      <g className="wa-phone"><rect x="254" y="75" width="163" height="294" rx="24"/><rect x="265" y="105" width="141" height="247" rx="15" className="wa-screen"/><rect x="306" y="87" width="60" height="5" rx="2" className="wa-earpiece"/><circle cx="335" cy="360" r="3" className="wa-home-dot"/><rect x="277" y="119" width="117" height="34" rx="10" className="wa-chat-head"/><circle cx="293" cy="136" r="9" className="wa-avatar"/><text x="309" y="134" className="wa-chat-name">SATHYASCAN</text><text x="309" y="146" className="wa-chat-status">WHATSAPP · EXTERNAL</text><rect x="275" y="168" width="111" height="49" rx="11" className="wa-bubble wa-bubble-user"/><text x="286" y="186" className="wa-bubble-text">Can you check</text><text x="286" y="201" className="wa-bubble-text">this news claim?</text><rect x="286" y="227" width="108" height="84" rx="11" className="wa-bubble wa-bubble-agent"/><text x="297" y="246" className="wa-bubble-label">AI-ASSISTED CHECK</text><text x="297" y="265" className="wa-bubble-text">Looking for</text><text x="297" y="280" className="wa-bubble-text">sources &amp; context…</text><circle cx="300" cy="297" r="2" className="wa-typing"/><circle cx="309" cy="297" r="2" className="wa-typing typing-two"/><circle cx="318" cy="297" r="2" className="wa-typing typing-three"/></g>
+      <path className="wa-handoff wa-handoff-return" d="M418 219h38"/><circle cx="438" cy="219" r="4" className="wa-packet wa-packet-return"/>
+      <g className="wa-response"><rect x="458" y="115" width="158" height="220" rx="18"/><text x="476" y="146" className="wa-response-kicker">RESPONSE TO REVIEW</text><path d="M476 160h122" className="wa-rule"/><circle cx="484" cy="186" r="7" className="wa-source-dot"/><text x="500" y="189" className="wa-response-title">Source links</text><path d="M500 200h91" className="wa-response-line"/><circle cx="484" cy="230" r="7" className="wa-context-dot"/><text x="500" y="233" className="wa-response-title">Claim context</text><path d="M500 244h91" className="wa-response-line"/><circle cx="484" cy="273" r="7" className="wa-review-dot"/><text x="500" y="276" className="wa-response-title">What to verify</text><path d="M500 287h91" className="wa-response-line"/><rect x="476" y="305" width="122" height="18" rx="8" className="wa-external-pill"/><text x="537" y="318" textAnchor="middle" className="wa-external-text">EXTERNAL SERVICE</text></g>
+      <g className="wa-cyberwall"><rect x="458" y="347" width="158" height="34" rx="11"/><circle cx="476" cy="364" r="8"/><path d="M472 364h8m-4-4v8"/><text x="491" y="362">CYBERWALL</text><text x="491" y="373" className="wa-cyberwall-sub">WhatsApp · links &amp; APKs</text></g>
+      <text x="325" y="440" textAnchor="middle" className="wa-disclaimer">TrustGuard hands off · You review sources and decide</text>
+      <text x="325" y="468" textAnchor="middle" className="scene-caption">WHATSAPP AI-ASSISTED NEWS CHECK · NOT A VERDICT</text>
     </svg>
   );
 }
@@ -266,8 +268,8 @@ function FraudActivitySnapshot() {
       </div>
       <div className="tg-data-layout">
         <div className="tg-data-stats">
-          <article className="tg-data-stat" data-reveal><span className="tg-stat-icon stat-complaints"><MessageCircleWarning size={18} /></span><strong>6.59M+</strong><span>financial fraud complaints</span><small>NCRP · 2021–2025</small></article>
-          <article className="tg-data-stat" data-reveal data-reveal-delay="1"><span className="tg-stat-icon stat-reported"><Banknote size={18} /></span><strong>₹55,050Cr+</strong><span>reported amount</span><small>NCRP · 2021–2025</small></article>
+          <article className="tg-data-stat" data-reveal><span className="tg-stat-icon stat-complaints"><MessageCircleWarning size={21} strokeWidth={1.8} /><i><ShieldAlert size={11} strokeWidth={2.2} /></i></span><strong>6.59M+</strong><span>financial fraud complaints</span><small>NCRP · 2021–2025</small></article>
+          <article className="tg-data-stat" data-reveal data-reveal-delay="1"><span className="tg-stat-icon stat-reported"><CircleDollarSign size={22} strokeWidth={1.8} /><i><ArrowUpRight size={11} strokeWidth={2.3} /></i></span><strong>₹55,050Cr+</strong><span>reported amount</span><small>NCRP · 2021–2025</small></article>
           <article className="tg-data-stat" data-reveal data-reveal-delay="2"><span className="tg-stat-icon stat-lien"><LockKeyhole size={18} /></span><strong>₹8,189Cr+</strong><span>amount marked as lien</span><small>CFCFRMS · 2021–2025</small></article>
           <article className="tg-data-stat" data-reveal data-reveal-delay="1"><span className="tg-stat-icon stat-fir"><ShieldCheck size={18} /></span><strong>195,760+</strong><span>FIRs registered</span><small>NCRP · 2021–2025</small></article>
         </div>
@@ -435,11 +437,11 @@ function App() {
           </div>
 
           <div className="tg-hero-art-wrap" data-reveal data-reveal-delay="1" onPointerMove={moveIllustration} onPointerLeave={resetIllustration}>
-            <div className="tg-art-caption"><span><i /> {visualScene === 0 ? "SAFETY, IN MOTION" : visualScene === 1 ? "SIGNALS, WITH CONTEXT" : "SCAM PATTERN MAP"}</span><div className="tg-scene-controls"><button type="button" aria-label="Previous safety visual" onClick={() => setVisualScene((visualScene + 2) % 3)}><ChevronLeft size={15} /></button><span>0{visualScene + 1} / 03</span><button type="button" aria-label="Next safety visual" onClick={() => setVisualScene((visualScene + 1) % 3)}><ChevronRight size={15} /></button></div></div>
+            <div className="tg-art-caption"><span><i /> {visualScene === 0 ? "SAFETY, IN MOTION" : visualScene === 1 ? "MEDIA ANALYSIS" : "WHATSAPP NEWS CHECK"}</span><div className="tg-scene-controls"><button type="button" aria-label="Previous safety visual" onClick={() => setVisualScene((visualScene + 2) % 3)}><ChevronLeft size={15} /></button><span>0{visualScene + 1} / 03</span><button type="button" aria-label="Next safety visual" onClick={() => setVisualScene((visualScene + 1) % 3)}><ChevronRight size={15} /></button></div></div>
             <div className="tg-hero-art" key={visualScene}>
-              {visualScene === 0 ? <SafeWorldIllustration /> : visualScene === 1 ? <SignalScene /> : <NetworkScene />}
+              {visualScene === 0 ? <SafeWorldIllustration /> : visualScene === 1 ? <MediaAnalysisScene /> : <WhatsAppNewsScene />}
             </div>
-            <div className="tg-art-footnote"><span className="tg-mini-shield"><Shield size={13} /></span>{visualScene === 0 ? "A second look can change everything" : visualScene === 1 ? "Review the clues. No single signal decides." : "Spot the pattern. Verify through another channel."}<span className="tg-scene-dots" aria-label="Choose a safety illustration">{[0, 1, 2].map((scene) => <button key={scene} type="button" className={visualScene === scene ? "active" : ""} aria-label={`Show safety visual ${scene + 1}`} aria-pressed={visualScene === scene} onClick={() => setVisualScene(scene)} />)}</span></div>
+            <div className="tg-art-footnote"><span className="tg-mini-shield"><Shield size={13} /></span>{visualScene === 0 ? "A second look can change everything" : visualScene === 1 ? "Image, audio & video clues for review." : "SathyaScan is an external WhatsApp service."}<span className="tg-scene-dots" aria-label="Choose a safety illustration">{[0, 1, 2].map((scene) => <button key={scene} type="button" className={visualScene === scene ? "active" : ""} aria-label={`Show safety visual ${scene + 1}`} aria-pressed={visualScene === scene} onClick={() => setVisualScene(scene)} />)}</span></div>
           </div>
           <a className="tg-scroll-cue" href="#check-signal" aria-label="Scroll down to choose a signal to check"><span /> SCROLL TO EXPLORE <ArrowDown size={13} /></a>
         </section>
@@ -523,8 +525,8 @@ function App() {
           <div className="tg-risk-copy"><span className="tg-risk-icon"><CircleHelp size={20} /></span><div><p className="tg-eyebrow">READ THE SCORE RESPONSIBLY</p><h2>Risk indicators are not proof.</h2><p>Use the score to decide what to double-check—not whether to trust someone automatically.</p></div></div>
           <div className="tg-risk-levels">
             <div className="risk-level low"><span className="risk-level-mark"><ShieldCheck size={19} /><b>0–29</b></span><strong>Lower signal</strong><span className="risk-visual"><i /></span><small>Continue with normal care</small></div>
-            <div className="risk-level review"><span className="risk-level-mark"><CircleHelp size={19} /><b>30–49</b></span><strong>Needs a closer look</strong><span className="risk-visual"><i /></span><small>Verify before acting</small></div>
-            <div className="risk-level high"><span className="risk-level-mark"><ShieldAlert size={19} /><b>50–100</b></span><strong>High signal</strong><span className="risk-visual"><i /></span><small>Pause and verify another way</small></div>
+            <div className="risk-level review"><span className="risk-level-mark"><CircleHelp size={19} /><b>30–50</b></span><strong>Needs a closer look</strong><span className="risk-visual"><i /></span><small>Verify before acting</small></div>
+            <div className="risk-level high"><span className="risk-level-mark"><ShieldAlert size={19} /><b>51–100</b></span><strong>High signal</strong><span className="risk-visual"><i /></span><small>Pause and verify another way</small></div>
           </div>
         </section>
 

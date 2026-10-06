@@ -779,6 +779,36 @@
 .network-node circle { fill:#253951;stroke:#6dd5ae;stroke-width:2; }.network-node text { fill:#f1f4f4;font-family:"Avenir Next",Avenir,sans-serif;font-size:11px;font-weight:800;letter-spacing:.9px; }.network-node text.scene-sub { fill:#acb8cb;font-size:8px;font-weight:500;letter-spacing:0; }
 .network-node.node-purple circle { stroke:#a992f1; }.network-node.node-amber circle { stroke:#e8b879; }.network-node.node-blue circle { stroke:#83b9e4; }
 .network-pulse { fill:none;stroke:#85e3b8;stroke-opacity:.38;stroke-width:1;animation:network-pulse 3s ease-out infinite; }.network-pulse.pulse-delay { animation-delay:1.5s; }
+.media-kicker,.wa-kicker { fill:#a4e9c9;font-family:"Avenir Next",Avenir,sans-serif;font-size:12px;font-weight:800;letter-spacing:1.8px; }
+.media-input rect:first-child,.media-inspector>rect:first-child,.media-result>rect:first-child { fill:#ffffff0d;stroke:#7495a6;stroke-opacity:.48;stroke-width:1.4; }
+.media-input rect:not(:first-child) { fill:#293e59;stroke:#88d9b7;stroke-width:1.4; }
+.media-input circle { fill:#6ad6aa; }.media-input path { fill:#70d6b1;stroke:#a5efd0;stroke-width:1;stroke-linejoin:round; }
+.media-input-audio>circle { fill:#203850;stroke:#9f8ae5;stroke-width:1.6; }.media-input-audio>path { fill:none;stroke:#c5b2ff;stroke-width:2.2;stroke-linecap:round; }
+.media-input-video rect:not(:first-child) { stroke:#82b9e5; }.media-input-video path { fill:#b8d8ff;stroke:none; }
+.media-input text,.media-title { fill:#f4f6f6;font-family:"Avenir Next",Avenir,sans-serif;font-size:12px;font-weight:800;letter-spacing:.8px; }
+.media-input text.media-small { fill:#adbbce;font-size:9px;font-weight:500;letter-spacing:0; }
+.media-flow { fill:none;stroke:#76dcb6;stroke-opacity:.66;stroke-width:1.8;stroke-dasharray:5 7;animation:connection-flow 7s linear infinite; }
+.media-packet { fill:#9cf1cc;filter:drop-shadow(0 0 5px #77e3b9);animation:media-packet 2.4s ease-in-out infinite alternate; }
+.media-inspector>rect:first-child { fill:#1c2d48;stroke:#9d8ce4;stroke-opacity:.65; }
+.media-frame { fill:#233c53;stroke:#85cfe0;stroke-opacity:.65;stroke-width:1; }.media-frame-landscape { fill:#3a8e82;opacity:.8; }.media-face { fill:#ebc591;stroke:#ffe0b5;stroke-width:1; }
+.media-wave-base,.media-film { fill:#182a42;stroke:#57758c;stroke-width:1; }.media-wave { fill:none;stroke:#a995f1;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:130;stroke-dashoffset:130;animation:media-wave-draw 2.2s ease-in-out infinite alternate; }
+.media-film-line { fill:none;stroke:#79d8b6;stroke-opacity:.7;stroke-width:1.2; }.media-film-cuts { fill:none;stroke:#7e91a5;stroke-width:1; }.media-progress-track { fill:#31465c; }.media-progress { fill:#8fe7c0;animation:media-progress 4s ease-in-out infinite alternate; }
+.media-result-icon { fill:#173c43;stroke:#78dfb7;stroke-width:1.3; }.media-check { fill:none;stroke:#a0efcb;stroke-width:2;stroke-linecap:round;stroke-linejoin:round; }
+.media-row-title { fill:#c5cfde;font-family:"Avenir Next",Avenir,sans-serif;font-size:10px;font-weight:600; }.media-bar-track { fill:#ffffff16; }.media-bar.mint { fill:#66d2a5; }.media-bar.lilac { fill:#a18ce7; }.media-bar.blue { fill:#78bce4; }
+.media-divider,.wa-rule { fill:none;stroke:#ffffff24;stroke-width:1; }.media-note { fill:#a4e9c9;font-family:"Avenir Next",Avenir,sans-serif;font-size:7px;font-weight:800;letter-spacing:.5px; }
+.wa-article>rect:first-child,.wa-response>rect:first-child { fill:#fffdf5;stroke:#d3c9ad;stroke-width:1.4; }.wa-paper-label { fill:#eadfc5; }.wa-paper-label-text { fill:#756b58;font-family:"Avenir Next",Avenir,sans-serif;font-size:8px;font-weight:800;letter-spacing:.8px; }
+.wa-article-title { fill:#24324a;font-family:Georgia,serif;font-size:15px;font-weight:700; }.wa-news-image { fill:#d7e2d7; }.wa-news-art { fill:#6ba894; }.wa-article-lines { fill:none;stroke:#b5ad9b;stroke-width:2;stroke-linecap:round; }.wa-source-note { fill:#a56c53;font-family:"Avenir Next",Avenir,sans-serif;font-size:8px;font-weight:800;letter-spacing:.7px; }
+.wa-handoff { fill:none;stroke:#78d8a8;stroke-width:2;stroke-dasharray:5 6;animation:connection-flow 5s linear infinite; }.wa-handoff-return { stroke:#a995f1;animation-direction:reverse; }.wa-packet { fill:#b0f2cd;filter:drop-shadow(0 0 5px #70dda7);animation:media-packet 2s ease-in-out infinite alternate; }.wa-packet-return { fill:#c7b8ff;animation-delay:.8s; }
+.wa-phone>rect:first-child { fill:#18263d;stroke:#77d8a8;stroke-opacity:.75;stroke-width:1.6; }.wa-screen { fill:#e4eee6;stroke:#9eafa5;stroke-width:.8; }.wa-earpiece,.wa-home-dot { fill:#86998e; }.wa-chat-head { fill:#1d755e; }.wa-avatar { fill:#a5e4bd; }.wa-chat-name,.wa-chat-status,.wa-bubble-text,.wa-bubble-label { font-family:"Avenir Next",Avenir,sans-serif; }.wa-chat-name { fill:#f5fff9;font-size:8px;font-weight:800;letter-spacing:.6px; }.wa-chat-status { fill:#d5f0df;font-size:6px;font-weight:600;letter-spacing:.4px; }
+.wa-bubble-user { fill:#d1e8d8; }.wa-bubble-agent { fill:#fffdf6;stroke:#c9d8cc;stroke-width:.7; }.wa-bubble-text { fill:#2a3d3a;font-size:9px;font-weight:600; }.wa-bubble-label { fill:#218465;font-size:6.5px;font-weight:800;letter-spacing:.35px; }
+.wa-typing { fill:#4baf82;animation:wa-typing 1s ease-in-out infinite alternate; }.wa-typing.typing-two { animation-delay:.2s; }.wa-typing.typing-three { animation-delay:.4s; }
+.wa-response>rect:first-child { fill:#23334d;stroke:#8ab9a7;stroke-opacity:.6; }.wa-response-kicker { fill:#a6eac8;font-family:"Avenir Next",Avenir,sans-serif;font-size:8px;font-weight:800;letter-spacing:.75px; }.wa-source-dot { fill:#75d6ae; }.wa-context-dot { fill:#a994eb; }.wa-review-dot { fill:#83bde7; }.wa-response-title { fill:#f0f4f4;font-family:"Avenir Next",Avenir,sans-serif;font-size:9px;font-weight:700; }.wa-response-line { fill:none;stroke:#a8b7c5;stroke-opacity:.4;stroke-width:2;stroke-linecap:round; }.wa-external-pill { fill:#1b4b43;stroke:#76d7aa;stroke-opacity:.65;stroke-width:.7; }.wa-external-text { fill:#a7f0cb;font-family:"Avenir Next",Avenir,sans-serif;font-size:7px;font-weight:800;letter-spacing:.45px; }
+.wa-cyberwall>rect { fill:#253752;stroke:#a995e8;stroke-opacity:.65;stroke-width:1; }.wa-cyberwall>circle { fill:#463e68;stroke:#b6a5f3;stroke-width:1; }.wa-cyberwall>path { fill:none;stroke:#d0c5ff;stroke-width:1.2;stroke-linecap:round; }.wa-cyberwall>text { fill:#f4f3fb;font-family:"Avenir Next",Avenir,sans-serif;font-size:8px;font-weight:800;letter-spacing:.5px; }.wa-cyberwall>text.wa-cyberwall-sub { fill:#bdc5d4;font-size:6.5px;font-weight:500;letter-spacing:0; }
+.wa-disclaimer { fill:#d3dfdc;font-family:"Avenir Next",Avenir,sans-serif;font-size:10px;font-weight:600;letter-spacing:.25px; }
+@keyframes media-packet { to { transform:translateX(7px);opacity:.55; } }
+@keyframes media-wave-draw { to { stroke-dashoffset:0; } }
+@keyframes media-progress { to { width:72px; } }
+@keyframes wa-typing { to { opacity:.25;transform:translateY(-2px); } }
 @keyframes scene-orbit { to { transform:rotate(360deg); } }
 @keyframes connection-flow { to { stroke-dashoffset:-55; } }
 @keyframes scan-orbit { to { transform:rotate(360deg); } }
@@ -805,6 +835,65 @@
   .tg-scene-dots { margin-left:auto; }
 }
 @media (prefers-reduced-motion:reduce) {
-  .trend-line,.tg-pie-graphic,.scene-orbit,.scene-connection,.scene-scan,.network-links .network-dash,.network-pulse { animation:none!important;stroke-dashoffset:0; }
+  .trend-line,.tg-pie-graphic,.scene-orbit,.scene-connection,.scene-scan,.network-links .network-dash,.network-pulse,.media-flow,.media-packet,.media-wave,.media-progress,.wa-handoff,.wa-packet,.wa-typing { animation:none!important;stroke-dashoffset:0; }
   [data-reveal="stop"], [data-reveal="stop"].is-visible { opacity:1;transform:none;transition:none; }
+}
+
+/* Refinements for the review screenshots: calmer metrics, clearer cards, and more legible labels. */
+.tg-app {
+  background-color:#f7faf6;
+  background-image:radial-gradient(ellipse at 8% 16%,rgba(165,222,187,.28),transparent 32%),radial-gradient(ellipse at 90% 35%,rgba(191,232,211,.24),transparent 34%),radial-gradient(ellipse at 58% 88%,rgba(213,239,221,.26),transparent 39%),linear-gradient(135deg,#f8faf6,#f4f8f3 48%,#f8f8f4);
+  background-size:145% 145%;
+  animation:tg-fluid-wash 30s ease-in-out infinite alternate;
+}
+.tg-fraud-data {
+  background:radial-gradient(ellipse at 18% 22%,rgba(195,235,207,.78),transparent 39%),radial-gradient(ellipse at 84% 84%,rgba(213,239,222,.78),transparent 43%),linear-gradient(128deg,#f1f7ef 0%,#eaf5ef 52%,#f0f3ec 100%);
+}
+.tg-data-stat,.tg-data-chart,.tg-research-chart {
+  border-color:rgba(191,211,198,.9);
+  background:linear-gradient(145deg,#fffefa 0%,#fafffa 100%);
+  box-shadow:0 16px 36px rgba(34,72,51,.09),0 2px 6px rgba(34,72,51,.04);
+}
+.tg-data-stat { min-height:150px;padding:17px 18px; }
+.tg-data-stat > strong { margin-top:8px;font-size:clamp(21px,2.2vw,24px);font-weight:590;letter-spacing:-.045em; }
+.tg-data-stat > span:not(.tg-stat-icon) { font-size:12px;font-weight:620; }
+.tg-data-stat > small { margin-top:6px;font-size:10px; }
+.tg-stat-icon { position:relative;width:42px;height:42px;border:1px solid rgba(53,128,99,.08);border-radius:14px; }
+.tg-stat-icon > svg { filter:drop-shadow(0 2px 2px rgba(29,80,60,.1)); }
+.tg-stat-icon > i { position:absolute;right:-4px;bottom:-3px;width:19px;height:19px;display:grid;place-items:center;border:2px solid #fffefa;border-radius:50%;background:#fffefa;font-style:normal; }
+.stat-complaints > i { color:#d27360; }
+.stat-reported > i { color:#438e70; }
+.tg-how-section .tg-flow-card { min-height:240px;border:1px solid #d5e5d8;border-radius:20px;background:linear-gradient(145deg,#fffefa 0%,#f2f8f2 100%);box-shadow:0 18px 38px rgba(34,72,51,.085),inset 0 1px rgba(255,255,255,.9); }
+.tg-flow-card h3 { font-size:17px; }
+.tg-flow-card p { min-height:58px;color:#586e61;font-size:13px;line-height:1.68; }
+.tg-flow-card > span:last-child { font-size:10px;letter-spacing:.12em; }
+.tg-how-section .tg-flow-card .tg-flow-icon { width:52px;height:52px; }
+.tg-art-caption { font-size:10px; }
+.tg-scene-controls > span { font-size:11px; }
+.tg-scene-controls button { width:34px;height:34px; }
+.tg-art-footnote { font-size:12px; }
+.scene-node text { font-size:12px;letter-spacing:.7px; }
+.scene-node text.scene-sub { font-size:9px; }
+.scene-node circle { stroke-width:1.8; }
+.scene-node .scene-call-glyph,.scene-node .scene-context-glyph { fill:none;stroke:#91e8c4;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round; }
+.node-call circle { fill:#77d9b51f; }
+.node-context circle { fill:#86b5dc27;stroke:#9dcaf0; }
+.node-context .scene-context-glyph { stroke:#b5dcf7; }
+.scene-caption { font-size:10px;letter-spacing:1.35px; }
+.network-node text { font-size:13px; }
+.network-node text.scene-sub { font-size:9px; }
+
+@keyframes tg-fluid-wash {
+  0% { background-position:0% 0%; }
+  50% { background-position:70% 35%; }
+  100% { background-position:100% 85%; }
+}
+@media (max-width:760px) {
+  .tg-data-stat { min-height:140px; }
+  .tg-data-stat > strong { font-size:21px; }
+  .tg-flow-card p { font-size:12px; }
+  .tg-art-caption { font-size:9px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .tg-app { animation:none;background-position:50% 50%; }
 }

@@ -4,7 +4,6 @@ import {
   FilesetResolver,
 } from "@mediapipe/tasks-vision";
 import { Peer } from "peerjs";
-import { saveIncidentSignals } from "../incidentStore";
 import "./LiveGuard.css";
 
 const LANDMARK_MODEL =
@@ -330,9 +329,6 @@ function LiveGuard({ onBack })  {
   const [faceCount, setFaceCount] =
     useState(0);
 
-  const [faceConfidence, setFaceConfidence] =
-    useState(0);
-
   const [analysisStatus, setAnalysisStatus] =
     useState("WAITING FOR VIDEO");
 
@@ -348,9 +344,6 @@ function LiveGuard({ onBack })  {
     useState(0);
 
   const [frameFreshness, setFrameFreshness] =
-    useState(100);
-
-  const [temporalStability, setTemporalStability] =
     useState(100);
 
   const [videoRiskStatus, setVideoRiskStatus] =
@@ -370,9 +363,6 @@ function LiveGuard({ onBack })  {
     useState("WAITING");
 
   // Voice
-  const [voiceStatus, setVoiceStatus] =
-    useState("WAITING");
-
   const voiceAnalysisSettledRef =
     useRef(false);
 
@@ -383,7 +373,7 @@ function LiveGuard({ onBack })  {
     useState(0);
 
   const [voiceAnomalyRisk, setVoiceAnomalyRisk] =
-    useState(0);
+    useState(null);
 
   const [voiceProfileStatus, setVoiceProfileStatus] =
     useState("WAITING FOR AUDIO");
@@ -1198,10 +1188,6 @@ function LiveGuard({ onBack })  {
             "FACE DETECTED"
           );
 
-          setFaceConfidence(
-            100
-          );
-
           updateFacePresence(
             true
           );
@@ -1263,10 +1249,6 @@ function LiveGuard({ onBack })  {
       "NO FACE"
     );
 
-    setFaceConfidence(
-      0
-    );
-
     setAnalysisStatus(
       "FACE NOT DETECTED"
     );
@@ -1303,10 +1285,6 @@ function LiveGuard({ onBack })  {
 
     setFaceStatus(
       "MULTIPLE FACES"
-    );
-
-    setFaceConfidence(
-      0
     );
 
     setAnalysisStatus(
@@ -1789,12 +1767,6 @@ function LiveGuard({ onBack })  {
         )
       );
 
-      setTemporalStability(
-        Math.round(
-          freshness
-        )
-      );
-
       let replay =
         0;
 
@@ -1880,10 +1852,6 @@ function LiveGuard({ onBack })  {
     );
 
     setFrameFreshness(
-      100
-    );
-
-    setTemporalStability(
       100
     );
 
@@ -2183,10 +2151,6 @@ function LiveGuard({ onBack })  {
         remoteStream.getAudioTracks();
 
       if (!tracks.length) {
-        setVoiceStatus(
-          "NO AUDIO"
-        );
-
         setVoiceProfileStatus(
           "NO AUDIO TRACK"
         );
@@ -2252,10 +2216,6 @@ function LiveGuard({ onBack })  {
         } catch {}
       }
 
-      setVoiceStatus(
-        "ANALYZING"
-      );
-
       setVoiceProfileStatus(
         "CALIBRATING VOICE"
       );
@@ -2263,10 +2223,6 @@ function LiveGuard({ onBack })  {
       console.error(
         "Voice analysis error:",
         err
-      );
-
-      setVoiceStatus(
-        "UNAVAILABLE"
       );
 
       setVoiceProfileStatus(
@@ -2514,12 +2470,6 @@ function LiveGuard({ onBack })  {
       history.length <
       6
     ) {
-      setVoiceStatus(
-        isSpeechLike
-          ? "VOICE DETECTED"
-          : "LISTENING"
-      );
-
       return;
     }
 
@@ -2694,28 +2644,16 @@ function LiveGuard({ onBack })  {
     if (
       value >= 70
     ) {
-      setVoiceStatus(
-        "HIGH ANOMALY"
-      );
-
       setVoiceProfileStatus(
         "REVIEW SYNTHETIC-VOICE SIGNALS"
       );
     } else if (
       value >= 35
     ) {
-      setVoiceStatus(
-        "REVIEW"
-      );
-
       setVoiceProfileStatus(
         "VOICE SIGNAL ANOMALY"
       );
     } else {
-      setVoiceStatus(
-        "NORMAL SIGNAL"
-      );
-
       setVoiceProfileStatus(
         "NO STRONG VOICE ANOMALY"
       );
@@ -2733,10 +2671,6 @@ function LiveGuard({ onBack })  {
       null;
     voiceAnalysisSettledRef.current = false;
 
-    setVoiceStatus(
-      "WAITING"
-    );
-
     setVoiceSignal(
       0
     );
@@ -2746,7 +2680,7 @@ function LiveGuard({ onBack })  {
     );
 
     setVoiceAnomalyRisk(
-      0
+      null
     );
 
     setVoiceProfileStatus(
@@ -2845,13 +2779,6 @@ function LiveGuard({ onBack })  {
     setRiskReasons([...new Set(reasons)]);
     setWarningVisible(level === "HIGH");
 
-    try {
-      saveIncidentSignals({
-        voice_risk: voiceRiskRef.current == null
-          ? null
-          : clamp(voiceRiskRef.current),
-      });
-    } catch {}
   }
 
   // ==========================================================
@@ -2887,10 +2814,6 @@ function LiveGuard({ onBack })  {
     );
 
     setFaceCount(
-      0
-    );
-
-    setFaceConfidence(
       0
     );
 
@@ -3339,7 +3262,7 @@ function LiveGuard({ onBack })  {
                   900,
               }}
             >
-              HIGH-RISK CALL DETECTED
+              HIGH-RISK SIGNALS — VERIFY INDEPENDENTLY
             </div>
 
             <div
@@ -3890,6 +3813,7 @@ function LiveGuard({ onBack })  {
                 <h2>
                   Live Forensics
                 </h2>
+                <p className="analysis-substatus">{analysisStatus}</p>
 
               </div>
 
@@ -3918,9 +3842,7 @@ function LiveGuard({ onBack })  {
                   Faces
                 </span>
 
-                <strong>
-                  {faceCount}
-                </strong>
+                <strong>{faceStatus === "WAITING" ? "—" : faceCount}</strong>
               </div>
 
               <div className="metric">
@@ -3928,9 +3850,17 @@ function LiveGuard({ onBack })  {
                   Face presence
                 </span>
 
-                <strong>
-                  {facePresenceScore}%
-                </strong>
+                <strong>{faceStatus === "WAITING" ? "—" : `${facePresenceScore}%`}</strong>
+              </div>
+
+              <div className="metric">
+                <span>Frame freshness</span>
+                <strong>{faceStatus === "FACE DETECTED" ? `${frameFreshness}%` : "—"}</strong>
+              </div>
+
+              <div className="metric">
+                <span>Landmark geometry consistency</span>
+                <strong>{consistencyStatus === "WAITING" ? "—" : `${consistencyScore}%`}</strong>
               </div>
 
             </div>
@@ -3946,39 +3876,41 @@ function LiveGuard({ onBack })  {
 
             <SignalBox
               title="FACE CONSISTENCY"
-              value={`${consistencyRisk}/100 RISK`}
+              value={consistencyStatus === "WAITING" ? "—" : `${consistencyRisk}/100 RISK`}
               status={
                 consistencyStatus
               }
               good={
-                consistencyRisk <
-                35
+                consistencyStatus === "STABLE FACE TRACK"
               }
             />
 
             <SignalBox
-              title="REPLAY / DEEPFAKE"
-              value={`${replayScore}% RISK`}
+              title="REPLAY / FROZEN-FRAME CUES"
+              value={videoRiskStatus === "WAITING" ? "—" : `${replayScore}% RISK`}
               status={
                 videoRiskStatus
               }
               good={
-                replayScore <
-                35
+                videoRiskStatus === "NO STRONG REPLAY SIGNAL"
               }
             />
 
             <SignalBox
               title="VOICE ANALYSIS"
-              value={`${voiceAnomalyRisk}/100 RISK`}
+              value={voiceAnomalyRisk == null ? "—" : `${voiceAnomalyRisk}/100 RISK`}
               status={
-                voiceStatus
+                voiceProfileStatus
               }
               good={
-                voiceAnomalyRisk <
-                35
+                voiceAnomalyRisk != null && voiceAnomalyRisk < 35 && voiceProfileStatus === "NO STRONG VOICE ANOMALY"
               }
             />
+
+            <div className="metric-list voice-metrics">
+              <div className="metric"><span>Audio signal level</span><strong>{voiceProfileStatus.includes("WAITING") || voiceProfileStatus.includes("UNAVAILABLE") || voiceProfileStatus.includes("NO AUDIO") ? "—" : `${voiceSignal}%`}</strong></div>
+              <div className="metric"><span>Recent speech-like samples</span><strong>{voiceProfileStatus.includes("WAITING") || voiceProfileStatus.includes("UNAVAILABLE") || voiceProfileStatus.includes("NO AUDIO") ? "—" : `${speechActivity}%`}</strong></div>
+            </div>
 
           </div>
 
