@@ -74,6 +74,38 @@ function FilePreview({ file, url, kind }) {
   return null;
 }
 
+function ImageAssessment({ detection }) {
+  if (!detection) return null;
+  const labels = {
+    likely_ai_generated: "Likely AI-generated",
+    likely_photographic: "Likely photographic",
+    inconclusive: "Inconclusive — review the original",
+    unavailable: "Image detector unavailable",
+  };
+  const evidence = detection.metadata_evidence || {};
+  return (
+    <section className={`ma-image-assessment ${detection.status}`} aria-label="AI image assessment">
+      <p className="ma-kicker">PRETRAINED AI IMAGE DETECTOR</p>
+      <h3>{labels[detection.status] || "Inconclusive"}</h3>
+      {detection.available ? (
+        <>
+          <p>AI class model score: <strong>{detection.synthetic_model_score}/100</strong></p>
+          <p>Scores of 80 or above indicate likely AI generation; 20 or below indicate likely photographic content. The middle band needs review. These thresholds are provisional, and the score is not a calibrated probability or fraud score.</p>
+        </>
+      ) : <p>{detection.error || "The classifier could not run. Try again later."}</p>}
+      <h4>Camera evidence in this file</h4>
+      <dl>
+        <div><dt>Camera metadata</dt><dd>{evidence.camera || "Not present"}</dd></div>
+        <div><dt>Recorded capture time</dt><dd>{evidence.capture_time || "Not present"}</dd></div>
+        <div><dt>Location metadata</dt><dd>{evidence.gps_present ? "Present · coordinates hidden" : "Not present"}</dd></div>
+      </dl>
+      <p>Metadata can be edited or stripped. Its presence supports a camera-origin explanation; its absence does not mean an image is AI-generated.</p>
+      <p>{detection.limitations}</p>
+      <a href="https://huggingface.co/onnx-community/ai-image-detect-distilled-ONNX" target="_blank" rel="noopener noreferrer">Detector model and limitations ↗</a>
+    </section>
+  );
+}
+
 export default function MediaAnalysisPage({ onBack }) {
   const inputRef = useRef(null);
   const abortRef = useRef(null);
@@ -250,6 +282,7 @@ export default function MediaAnalysisPage({ onBack }) {
             </div>
           ) : result ? (
             <div className="ma-result-content">
+              {kind === "image" && <ImageAssessment detection={result.image_detection} />}
               <div className={`ma-score-card ${!qualityOnly && level === "HIGH" ? "high" : "medium"}`}>
                 <div className="ma-score-ring" style={{ "--score": `${score}%` }}>
                   <span>{score}<small>/100</small></span>
@@ -258,7 +291,7 @@ export default function MediaAnalysisPage({ onBack }) {
                   <span className="ma-kicker">{result.media_type || kind.toUpperCase()} {qualityOnly ? "QUALITY" : "ANOMALY"} SCORE · AUTHENTICITY UNVERIFIED</span>
                   <strong>{!qualityOnly && level === "HIGH" ? "HIGH RISK · VERIFY SOURCE" : "AUTHENTICITY UNVERIFIED"}</strong>
                   <p>{result.summary || "Review the signals below with the original file."}</p>
-                  <p>AI detection is unavailable. This score cannot classify the file as real, AI-generated, or fraudulent.</p>
+                  <p>{result.image_detection?.available ? "This quality score is separate from the AI image assessment above." : "AI detection is unavailable for this file."} This score cannot classify the file as real, AI-generated, or fraudulent.</p>
                 </div>
               </div>
 

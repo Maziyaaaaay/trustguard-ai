@@ -1,4 +1,5 @@
 from face_detector import detect_faces
+from image_classifier import classify_image
 
 import asyncio
 import logging
@@ -3758,6 +3759,7 @@ def analyze_image_media(content: bytes, filename: str, content_type: str) -> Dic
         faces = detect_faces(image)
         integrity = analyze_image_integrity(image)
         ocr = perform_ocr(image)
+        image_detection = classify_image(image)
         metadata_result = analyze_metadata(metadata, filename, False)
         # Document OCR, editor metadata and absence of faces are not evidence
         # that an ordinary photograph was AI-generated.
@@ -3768,6 +3770,7 @@ def analyze_image_media(content: bytes, filename: str, content_type: str) -> Dic
         return {
             "success": True,
             "kind": "image",
+            "image_detection": image_detection,
             "media_type": "IMAGE",
             "risk": combined_score,
             "signals": {
@@ -3777,12 +3780,13 @@ def analyze_image_media(content: bytes, filename: str, content_type: str) -> Dic
             "ocr": ocr,
             "metadata": metadata_result,
             "forensics": integrity,
-            "ai_indicators": {"status": "not_assessed", "method": "No trained image AI detector is configured."},
+            "ai_indicators": {"status": image_detection["status"], "method": "local_pretrained_image_classifier"},
             "findings": [
                 "Image evidence analyzed without audio/voice signals.",
                 f"Face detection: {'detected' if faces.get('detected') else 'not detected'}.",
                 "Image quality and recompression can reflect normal editing or compression, not AI generation.",
-                "AI generation was not assessed. Missing text or a missing face is not evidence of AI generation.",
+                "A local pretrained classifier assessed AI generation separately from image quality." if image_detection["available"] else "The image classifier is unavailable; AI generation was not assessed.",
+                "Missing text or a missing face is not evidence of AI generation.",
             ],
             "analysis_note": (
                 "Image authenticity values are heuristic indicators and should not be treated as definitive proof of manipulation."
@@ -3888,9 +3892,9 @@ async def _analyze_media(file: UploadFile):
         },
         "authenticity": {
             "status": "unverified",
-            "ai_detection_available": False,
-            "method": "signal_heuristics",
-            "message": "AI generation has not been verified. A low anomaly score does not establish that this media is real or safe.",
+            "ai_detection_available": bool(result.get("image_detection", {}).get("available")),
+            "method": "local_pretrained_image_classifier" if result.get("image_detection", {}).get("available") else "signal_heuristics",
+            "message": "Image classification is an experimental assessment, not proof of authenticity. A low quality anomaly score does not establish that media is real or safe.",
         },
         "signals": signals,
         "video_forensics": result if kind == "video" else None,
@@ -3900,6 +3904,7 @@ async def _analyze_media(file: UploadFile):
         "metadata": result.get("metadata"),
         "forensics": result.get("forensics"),
         "ai_indicators": result.get("ai_indicators"),
+        "image_detection": result.get("image_detection"),
         "findings": result.get("findings", []),
         "summary": (
             "Authenticity unverified. Few anomalies were found by basic signal checks; AI-generated media can pass these checks."

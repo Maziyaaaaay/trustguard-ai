@@ -19,3 +19,4 @@ numpy>=1.26,<3
 pillow>=10,<13
 pymupdf
 pytesseract
+onnxruntime>=1.20,<2
