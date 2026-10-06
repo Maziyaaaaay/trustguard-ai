@@ -247,14 +247,15 @@ export default function MediaAnalysisPage({ onBack }) {
             </div>
           ) : result ? (
             <div className="ma-result-content">
-              <div className={`ma-score-card ${level.toLowerCase()}`}>
+              <div className={`ma-score-card ${level === "HIGH" ? "high" : "medium"}`}>
                 <div className="ma-score-ring" style={{ "--score": `${score}%` }}>
                   <span>{score}<small>/100</small></span>
                 </div>
                 <div className="ma-score-copy">
-                  <span className="ma-kicker">{result.media_type || kind.toUpperCase()} RISK INDICATOR</span>
-                  <strong>{level} {level === "HIGH" ? "RISK" : level === "MEDIUM" ? "REVIEW" : "RISK"}</strong>
+                  <span className="ma-kicker">{result.media_type || kind.toUpperCase()} ANOMALY SCORE · AUTHENTICITY UNVERIFIED</span>
+                  <strong>{level === "HIGH" ? "HIGH RISK · VERIFY SOURCE" : "AUTHENTICITY UNVERIFIED"}</strong>
                   <p>{result.summary || "Review the signals below with the original file."}</p>
+                  <p>AI detection is unavailable. This score cannot classify the file as real, AI-generated, or fraudulent.</p>
                 </div>
               </div>
 

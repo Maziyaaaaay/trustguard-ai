@@ -3685,6 +3685,11 @@ def analyze_video_forensics(content: bytes, filename: str) -> Dict[str, Any]:
                 + replay_risk * 0.30
             )
 
+        # Strong repeated-frame evidence must not disappear in weighted fusion.
+        # This flags a temporal anomaly, not AI generation or fraud.
+        if replay_risk >= 60:
+            combined_score = max(combined_score, 55)
+
         findings = []
         if replay_reasons:
             findings.extend(replay_reasons)
@@ -3893,6 +3898,12 @@ async def _analyze_media(file: UploadFile):
             "score": risk_score,
             "level": get_risk_level(risk_score),
         },
+        "authenticity": {
+            "status": "unverified",
+            "ai_detection_available": False,
+            "method": "signal_heuristics",
+            "message": "AI generation has not been verified. A low anomaly score does not establish that this media is real or safe.",
+        },
         "signals": signals,
         "video_forensics": result if kind == "video" else None,
         "audio_forensics": result if kind == "audio" else result.get("audio") if kind == "video" else None,
@@ -3903,11 +3914,14 @@ async def _analyze_media(file: UploadFile):
         "ai_indicators": result.get("ai_indicators"),
         "findings": result.get("findings", []),
         "summary": (
-            "Lower concern based on available heuristic signals; this does not certify safety."
+            "Authenticity unverified. Few anomalies were found by basic signal checks; AI-generated media can pass these checks."
             if risk_score < 30
             else "One or more media authenticity signals warrant review."
         ),
-        "recommendation": build_recommendation(get_risk_level(risk_score)),
+        "recommendation": (
+            build_recommendation("HIGH") if risk_score > 50 else
+            "Verify the source and obtain independent evidence before acting. AI generation and authenticity remain unverified."
+        ),
         "analysis_note": result.get(
             "analysis_note",
             "Media authenticity values are heuristic indicators and should not be treated as definitive proof.",

@@ -408,7 +408,7 @@ function App() {
       <header className="tg-header">
         <button className="tg-brand" type="button" onClick={goHome} aria-label="TrustGuard AI home">
           <span className="tg-brand-mark" aria-hidden="true"><ShieldCheck size={21} strokeWidth={2.4} /></span>
-          <span className="tg-brand-copy"><strong>TRUSTGUARD AI</strong><small>PERSONAL SAFETY WORKSPACE</small></span>
+          <span className="tg-brand-copy"><strong>TRUSTGUARD AI</strong><small>PERSONAL SAFETY</small></span>
         </button>
 
         <nav className="tg-nav" aria-label="Main navigation">
@@ -418,7 +418,7 @@ function App() {
         <a className="tg-nav-specialist" href="https://wa.me/919497964163" target="_blank" rel="noopener noreferrer">CyberWall <ArrowUpRight size={13} /></a>
           <a className="tg-nav-specialist tg-nav-sathya" href="https://wa.me/919074871768" target="_blank" rel="noopener noreferrer">SathyaScan <ArrowUpRight size={13} /></a>
         </nav>
-        <span className="tg-header-status"><i /> Prototype workspace</span>
+        <span className="tg-header-status"><i /> Safety, connected</span>
       </header>
 
       <main className="tg-main">

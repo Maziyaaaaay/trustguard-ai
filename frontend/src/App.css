@@ -397,12 +397,18 @@
   background: #f8f7f3;
   font-family: "Avenir Next", Avenir, ui-sans-serif, system-ui, sans-serif;
 }
-.tg-header { padding-inline: clamp(20px, 6.5vw, 104px); border-color: rgba(26,35,59,.1); background: rgba(250,249,246,.86); }
+.tg-header { padding-inline: clamp(20px, 6.5vw, 104px); border-color: rgba(198, 231, 219, .14); background: rgba(16, 28, 48, .96); box-shadow: 0 10px 30px rgba(10, 22, 40, .12); }
 .tg-brand-mark { color: #e5fff1; background: linear-gradient(145deg,#173a47,#176e62); box-shadow: 0 8px 21px #123f3926; }
+.tg-brand-copy strong { color: #f4f8ff; }
+.tg-brand-copy small { color: #9ebbb2; }
 .tg-brand-copy strong,.tg-nav-item,.tg-nav-specialist { font-family: "Space Grotesk", sans-serif; }
-.tg-nav-item,.tg-nav-specialist { color:#6e7485; }
-.tg-nav-item:hover,.tg-nav-specialist:hover { color:#153e49;background:#e9f3ee; }
-.tg-nav-item.active { color:#163c46;background:#e5f2ea; }
+.tg-nav-item,.tg-nav-specialist { color:#c2ccdc; }
+.tg-nav-item:hover,.tg-nav-specialist:hover { color:#f2fff8;background:rgba(122, 210, 177, .14); }
+.tg-nav-item.active { color:#dcfff0;background:rgba(86, 193, 151, .2); }
+.tg-nav-specialist.tg-nav-sathya { color:#a8f1d2;background:rgba(68, 181, 139, .17); }
+.tg-nav-specialist.tg-nav-sathya:hover { color:#eafff6;background:rgba(68, 181, 139, .28); }
+.tg-header-status { color:#c2ccdc; }
+.tg-header-status i { background:#58d2a0; box-shadow:0 0 0 4px rgba(88, 210, 160, .15); }
 .tg-header-status i,.tg-art-caption i { background:#3cbb88; box-shadow:0 0 0 4px #3cbb8820; }
 .tg-main { width:min(1220px,calc(100% - 60px)); }
 .tg-hero { min-height:660px; padding:82px 2% 64px; }
@@ -536,8 +542,8 @@
 
 /* Legibility, verified reporting and calmer pointer-responsive motion. */
 .tg-nav { gap:3px; }
-.tg-nav-specialist.tg-nav-sathya { color:#176e62;background:#e5f2ea;font-weight:750; }
-.tg-nav-specialist.tg-nav-sathya:hover { background:#d8eee3; }
+.tg-nav-specialist.tg-nav-sathya { color:#a8f1d2;background:rgba(68,181,139,.17);font-weight:750; }
+.tg-nav-specialist.tg-nav-sathya:hover { color:#eafff6;background:rgba(68,181,139,.28); }
 .tg-hero-copy { padding-bottom:36px; }
 .tg-hero-proof { margin-top:25px; }
 .tg-hero-art-wrap { transform:none; perspective:1200px; }
