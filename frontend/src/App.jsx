@@ -202,6 +202,48 @@ function resetTilt(event) {
   event.currentTarget.style.setProperty("--tilt-y", "0deg");
 }
 
+function moveIllustration(event) {
+  if (event.pointerType === "touch") return;
+  const rect = event.currentTarget.getBoundingClientRect();
+  const x = (event.clientX - rect.left) / rect.width - 0.5;
+  const y = (event.clientY - rect.top) / rect.height - 0.5;
+  event.currentTarget.style.setProperty("--hover-x", `${x * 8}px`);
+  event.currentTarget.style.setProperty("--hover-y", `${y * -8}px`);
+  event.currentTarget.style.setProperty("--hover-rx", `${y * -2}deg`);
+  event.currentTarget.style.setProperty("--hover-ry", `${x * 2}deg`);
+}
+
+function resetIllustration(event) {
+  ["--hover-x", "--hover-y", "--hover-rx", "--hover-ry"].forEach((name) => event.currentTarget.style.removeProperty(name));
+}
+
+function FraudActivitySnapshot() {
+  return (
+    <section className="tg-fraud-data" aria-labelledby="fraud-data-heading">
+      <div className="tg-data-heading" data-reveal>
+        <div><p className="tg-eyebrow">THE SCALE OF REPORTED FINANCIAL CYBER FRAUD</p><h2 id="fraud-data-heading">The numbers behind<br /><em>the warning signs.</em></h2></div>
+        <p>India-wide reports tracked by NCRP and CFCFRMS. Complaints are not a count of unique people, and reported amounts are not independently verified final losses.</p>
+      </div>
+      <div className="tg-data-layout">
+        <div className="tg-data-stats">
+          <article className="tg-data-stat" data-reveal><span className="tg-stat-icon stat-complaints"><MessageCircleWarning size={18} /></span><strong>6.59M+</strong><span>financial fraud complaints</span><small>NCRP · 2021–2025</small></article>
+          <article className="tg-data-stat" data-reveal data-reveal-delay="1"><span className="tg-stat-icon stat-reported"><Banknote size={18} /></span><strong>₹55,050Cr+</strong><span>reported amount</span><small>NCRP · 2021–2025</small></article>
+          <article className="tg-data-stat" data-reveal data-reveal-delay="2"><span className="tg-stat-icon stat-lien"><LockKeyhole size={18} /></span><strong>₹8,189Cr+</strong><span>amount marked as lien</span><small>CFCFRMS · 2021–2025</small></article>
+          <article className="tg-data-stat" data-reveal data-reveal-delay="1"><span className="tg-stat-icon stat-fir"><ShieldCheck size={18} /></span><strong>195,760+</strong><span>FIRs registered</span><small>NCRP · 2021–2025</small></article>
+        </div>
+        <div className="tg-data-chart" data-reveal data-reveal-delay="2" role="img" aria-label="Official financial cyber fraud totals reported for India from 2021 through 2025: more than 55,050 crore rupees reported, and more than 8,189 crore rupees marked as lien">
+          <div className="tg-chart-top"><div><span className="tg-chart-kicker">REPORTED AMOUNT · ₹ CRORE</span><strong>Reported vs. lien marked</strong></div><span className="tg-chart-period">2021 — 2025</span></div>
+          <div className="tg-bar-row"><div><span>Reported</span><b>₹55,050Cr+</b></div><span className="tg-bar-track"><i className="bar-reported" /></span></div>
+          <div className="tg-bar-row"><div><span>Marked as lien</span><b>₹8,189Cr+</b></div><span className="tg-bar-track"><i className="bar-lien" /></span></div>
+          <div className="tg-chart-axis"><span>0</span><span>₹13,760Cr</span><span>₹27,520Cr</span><span>₹41,280Cr</span><span>₹55,050Cr+</span></div>
+          <p className="tg-chart-note">The lien-marked amount is part of the reported amount; lien marking does not mean the funds were recovered.</p>
+          <a href="https://www.pib.gov.in/PressReleasePage.aspx?PRID=2287039&lang=1&reg=48" target="_blank" rel="noopener noreferrer">Source: Ministry of Home Affairs / PIB, 21 July 2026 <ArrowUpRight size={13} /></a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 const fieldNotes = [
   {
     number: "01", category: "IMPERSONATION · LIVE CALLS", title: "The call that becomes a ‘digital arrest’",
@@ -236,6 +278,16 @@ function ScamFieldNotes() {
           <div><p className="tg-eyebrow"><Newspaper size={14} /> THE TRUSTGUARD FIELD DESK</p><h2 id="field-notes-heading">Scams change shape.<br /><em>Know the pattern.</em></h2></div>
           <p>Original, practical explainers based on official Indian cyber-safety advisories. These are curated field notes, not a live news feed.</p>
         </div>
+        <article className="tg-news-clipping" data-reveal>
+          <div className="tg-clipping-paper">
+            <div className="tg-clipping-masthead"><span>THE CASE FILE</span><span>PALAKKAD, KERALA · 04 JAN 2026</span></div>
+            <p className="tg-clipping-overline">VIRTUAL-ARREST FRAUD ATTEMPT</p>
+            <h3>Ex-serviceman outsmarts virtual-arrest fraudsters, tricks them into police net</h3>
+            <p>Onmanorama reported that C. V. Radhakrishnan of Palakkad received a WhatsApp video call from someone claiming to be Mumbai Police. When asked to deposit money, he alerted his family and local police.</p>
+            <div className="tg-clipping-byline"><span>Reported by Onmanorama</span><span>CASE NOTE · THE REPORT DESCRIBES AN ATTEMPT, NOT A LOSS</span></div>
+          </div>
+          <div className="tg-clipping-caption"><Newspaper size={17} /><span><strong>From the original report</strong><small>Newspaper clipping-inspired layout with a source-linked summary. Open the publication for the full story.</small></span><a href="https://www.onmanorama.com/news/kerala/2026/01/04/ex-serviceman-busts-fraud-virtual-arrest-scam-palakkad.amp.html" target="_blank" rel="noopener noreferrer">READ ORIGINAL <ArrowUpRight size={14} /></a></div>
+        </article>
         <div className="tg-field-grid">
           {fieldNotes.map(({ number, category, title, date, source, summary, action, href, icon: Icon, tone }, index) => (
             <article className={`tg-field-card field-${tone}`} key={number} data-reveal data-reveal-delay={index ? "1" : undefined}>
@@ -294,7 +346,8 @@ function App() {
           <button className="tg-nav-item active" type="button" aria-current="page" onClick={goHome}>Overview</button>
           <button className="tg-nav-item" type="button" onClick={() => setActivePage("liveguard")}>Live Guard</button>
           <button className="tg-nav-item" type="button" onClick={() => setActivePage("media")}>Media Analysis</button>
-          <a className="tg-nav-specialist" href="https://wa.me/919497964163" target="_blank" rel="noopener noreferrer">CyberWall <ArrowUpRight size={13} /></a>
+        <a className="tg-nav-specialist" href="https://wa.me/919497964163" target="_blank" rel="noopener noreferrer">CyberWall <ArrowUpRight size={13} /></a>
+          <a className="tg-nav-specialist tg-nav-sathya" href="https://wa.me/919074871768" target="_blank" rel="noopener noreferrer">SathyaScan <ArrowUpRight size={13} /></a>
         </nav>
         <span className="tg-header-status"><i /> Prototype workspace</span>
       </header>
@@ -311,16 +364,10 @@ function App() {
             <h1>Fraud moves fast.<br /><em>Take back a second.</em></h1>
             <p className="tg-intro">Bring a suspicious call or media file into focus. TrustGuard gathers visible risk signals, explains what triggered them, and helps you choose a safer next step.</p>
             <p className="tg-note">TrustGuard highlights signals for review. It cannot prove that a caller, file, or request is genuine.</p>
-            <div className="tg-hero-actions">
-              <button className="tg-button-primary" type="button" onClick={() => setActivePage("liveguard")}>
-                Check a live call <ArrowRight size={16} />
-              </button>
-              <button className="tg-button-quiet" type="button" onClick={() => setActivePage("media")}>Analyze media <ArrowDown size={14} /></button>
-            </div>
             <div className="tg-hero-proof"><span><Check size={13} /> Calls</span><span><Check size={13} /> Images & video</span><span><Check size={13} /> Scam signals</span></div>
           </div>
 
-          <div className="tg-hero-art-wrap" data-reveal data-reveal-delay="1">
+          <div className="tg-hero-art-wrap" data-reveal data-reveal-delay="1" onPointerMove={moveIllustration} onPointerLeave={resetIllustration}>
             <div className="tg-art-caption"><span><i /> SAFETY, IN MOTION</span><span>01 / 03</span></div>
             <div className="tg-hero-art"><SafeWorldIllustration /></div>
             <div className="tg-art-footnote"><span className="tg-mini-shield"><Shield size={13} /></span> A second look can change everything <Sparkles size={13} /></div>
@@ -337,6 +384,8 @@ function App() {
             ))}
           </div>
         </div>
+
+        <FraudActivitySnapshot />
 
         <section className="tg-tools-section tg-section-space" id="check-signal" aria-labelledby="tools-heading">
           <div className="tg-section-heading" data-reveal>
@@ -404,9 +453,9 @@ function App() {
         <section className="tg-risk-scale tg-section-space" data-reveal aria-label="How to interpret prototype risk scores">
           <div className="tg-risk-copy"><span className="tg-risk-icon"><CircleHelp size={20} /></span><div><p className="tg-eyebrow">READ THE SCORE RESPONSIBLY</p><h2>Risk indicators are not proof.</h2><p>Use the score to decide what to double-check—not whether to trust someone automatically.</p></div></div>
           <div className="tg-risk-levels">
-            <div className="risk-level low"><span>0–29</span><strong>Lower signal</strong><small>Continue with normal care</small></div>
-            <div className="risk-level review"><span>30–49</span><strong>Needs a closer look</strong><small>Verify before acting</small></div>
-            <div className="risk-level high"><span>50–100</span><strong>High signal</strong><small>Pause and verify another way</small></div>
+            <div className="risk-level low"><span className="risk-level-mark"><ShieldCheck size={19} /><b>0–29</b></span><strong>Lower signal</strong><span className="risk-visual"><i /></span><small>Continue with normal care</small></div>
+            <div className="risk-level review"><span className="risk-level-mark"><CircleHelp size={19} /><b>30–49</b></span><strong>Needs a closer look</strong><span className="risk-visual"><i /></span><small>Verify before acting</small></div>
+            <div className="risk-level high"><span className="risk-level-mark"><ShieldAlert size={19} /><b>50–100</b></span><strong>High signal</strong><span className="risk-visual"><i /></span><small>Pause and verify another way</small></div>
           </div>
         </section>
 
