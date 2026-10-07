@@ -133,6 +133,7 @@ export function calculateTrustGuardRisk({
   livenessRisk = null,
   livenessCompleted = false,
   livenessFailed = false,
+  livenessFailureCount = 0,
   faceConsistencyRisk = null,
   voiceRisk = null,
   facePresenceRisk = null,
@@ -179,6 +180,7 @@ export function calculateTrustGuardRisk({
   // Strong direct interaction or temporal anomalies must cross the project's
   // >50 HIGH threshold. This warns of risk; it does not prove deepfake content.
   if (livenessFailed) adjustedScore = Math.max(adjustedScore, 35);
+  if (livenessFailureCount >= 2) adjustedScore = Math.max(adjustedScore, 55);
   if (typeof replayRisk === "number" && replayRisk >= 55) {
     adjustedScore = Math.max(adjustedScore, 55);
   }
@@ -192,6 +194,9 @@ export function calculateTrustGuardRisk({
   }
   if (livenessFailed) {
     reasons.push("Movement challenge was not completed; retry. This alone is not a fraud finding");
+  }
+  if (livenessFailureCount >= 2) {
+    reasons.push("Two independent movement prompts were not completed; live response could not be verified");
   }
   if (!reasons.length) {
     reasons.push("No immediate high-risk signal detected");

@@ -131,7 +131,7 @@ score = 0.45 × liveness risk
       + 0.03 × face presence risk
 ```
 
-The implementation has been adjusted over time to reduce false high-risk results for normal moving streams, avoid labeling natural low-motion scenes as loops, and raise replay risk for sustained frozen/repeated/ordered-loop evidence. Liveness is a challenge signal; a missed or incomplete challenge should prompt retry/review and must not be presented as confirmed fraud on its own. Signals depend on face visibility, frame rates, lighting, camera position, and network behavior.
+The implementation has been adjusted over time to reduce false high-risk results for normal moving streams, avoid labeling natural low-motion scenes as loops, and raise replay risk for sustained frozen/repeated/ordered-loop evidence. Liveness is armed automatically after the caller stream connects and one face is available; no start button is required. A missed movement prompt remains a review signal and triggers an automatic retry. Two independent missed prompts raise a high live-response warning, not a confirmed AI/fraud verdict. A successful movement challenge is only a signal and can be mimicked by a recording. Signals depend on face visibility, frame rates, lighting, camera position, and network behavior.
 
 There is no trained deepfake video classifier in Live Guard. It cannot reliably determine whether a live stream is a genuine person, a prerecorded clip, or generated video in all cases. Frame repetition/loop indicators can flag some replay patterns but can be evaded and can also be affected by connection freezes. The live voice checks are acoustic heuristics, not trained voice-cloning detection.
 
@@ -210,7 +210,7 @@ These routes' presence does not establish their correctness, UI integration, or 
 
 Latest AASIST integration checks recorded:
 
-- 21 frontend tests passed.
+- 24 frontend tests passed after the latest Live Guard replay/liveness changes.
 - Frontend lint passed.
 - Frontend production build passed.
 - Python syntax compilation passed.
@@ -219,6 +219,13 @@ Latest AASIST integration checks recorded:
 - `pip check` reported no broken requirements in the local environment.
 - A generated one-second sine-wave fixture was sent to the production endpoint; it returned HTTP 200 and an inconclusive result without a numeric score, as intended for a clip shorter than 4.04 seconds.
 - Vercel build and deployment reported ready; production API smoke test succeeded.
+
+### Supplied Live Guard replay sample (7 October 2026)
+
+- `1-yad-demo.mp4` is approximately 9.97 seconds, H.264 video with AAC audio, at about 24 fps.
+- A local replay-check pass sampled 41 frames at roughly 4 fps. The current ordered-loop detector did not find a repeated sequence during the single playback; frame content changed continuously.
+- This explains why the clip did not trigger loop risk on a one-pass run. The old 35 score reflected a missed movement challenge, not an AI classifier result. The new flow starts movement prompts automatically and retries; two distinct missed prompts now raise a high live-response warning. Sustained ordered loops independently raise the replay score above 50.
+- This sample inspection is not proof that the clip is AI-generated, and the exact physical screen-to-camera live setup has not been exercised by an automated test. Confirm using the real phone/laptop demo.
 
 Security checks and their limits:
 

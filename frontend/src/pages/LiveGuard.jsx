@@ -188,6 +188,9 @@ function LiveGuard({ onBack })  {
   const livenessFailedRef =
     useRef(false);
 
+  const livenessFailureCountRef =
+    useRef(0);
+
   // ----------------------------------------------------------
   // Voice
   // ----------------------------------------------------------
@@ -1478,6 +1481,8 @@ function LiveGuard({ onBack })  {
     livenessFailedRef.current =
       false;
 
+    livenessFailureCountRef.current = 0;
+
     setLivenessStatus(
       "LIVENESS VERIFIED"
     );
@@ -1503,6 +1508,8 @@ function LiveGuard({ onBack })  {
     livenessFailedRef.current =
       true;
 
+    livenessFailureCountRef.current += 1;
+
     challengeRef.current =
       "FAILED";
 
@@ -1514,8 +1521,12 @@ function LiveGuard({ onBack })  {
       0
     );
 
-    livenessRiskRef.current = 35;
-    publishChallenge("The movement challenge was not completed. Ask the analyst to retry; this does not prove fraud.");
+    livenessRiskRef.current = livenessFailureCountRef.current >= 2 ? 55 : 35;
+    publishChallenge(
+      livenessFailureCountRef.current >= 2
+        ? "Two live movement prompts were not completed. Pause and verify the caller through another channel. This does not prove AI generation or fraud."
+        : "The movement prompt was not completed. A second independent prompt will be tried automatically."
+    );
 
     // Retry automatically after a short pause. A missed prompt is only a
     // review signal and must not be treated as proof of replay or fraud.
@@ -2588,7 +2599,7 @@ function LiveGuard({ onBack })  {
       challengeRef.current === "FAILED";
     const enoughSignals =
       frameDiffHistoryRef.current.length >= 12 &&
-      (challengeFinished || replayRiskRef.current >= 65);
+      (challengeFinished || livenessFailureCountRef.current >= 2 || replayRiskRef.current >= 65);
 
     if (!enoughSignals) {
       setRiskScore(null);
@@ -2604,6 +2615,7 @@ function LiveGuard({ onBack })  {
       livenessRisk: livenessRiskRef.current,
       livenessCompleted: challengeFinished,
       livenessFailed: livenessFailedRef.current,
+      livenessFailureCount: livenessFailureCountRef.current,
       faceConsistencyRisk: consistencyRiskRef.current,
       voiceRisk: voiceRiskRef.current,
       facePresenceRisk: facePresenceRiskRef.current,
@@ -2631,6 +2643,7 @@ function LiveGuard({ onBack })  {
   // ==========================================================
 
   function resetAllAnalysis() {
+    livenessFailureCountRef.current = 0;
     resetLiveness();
     resetReplayAnalysis();
     resetConsistency();

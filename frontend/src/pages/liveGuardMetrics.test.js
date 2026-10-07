@@ -36,6 +36,22 @@ test("a missed challenge requests review rather than a high fraud warning", () =
   assert.ok(result.score >= 30 && result.score <= 50);
 });
 
+test("two missed independent prompts raise a high live-response warning", () => {
+  const result = calculateTrustGuardRisk({
+    replayRisk: 0,
+    livenessRisk: 100,
+    livenessCompleted: true,
+    livenessFailed: true,
+    livenessFailureCount: 2,
+    faceConsistencyRisk: 0,
+    facePresenceRisk: 0,
+  });
+
+  assert.equal(result.level, "HIGH");
+  assert.ok(result.score > 50);
+  assert.ok(result.reasons.some((reason) => reason.includes("Two independent movement prompts")));
+});
+
 test("strong replay evidence crosses the high-risk threshold even if liveness passes", () => {
   const result = calculateTrustGuardRisk({
     replayRisk: 78,
