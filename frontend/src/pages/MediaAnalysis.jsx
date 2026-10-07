@@ -175,10 +175,14 @@ export default function MediaAnalysisPage({ onBack }) {
   const scoreValue = Number(result?.risk?.score ?? result?.risk_score ?? 0);
   const score = Math.max(0, Math.min(100, Math.round(Number.isFinite(scoreValue) ? scoreValue : 0)));
   const imageUncertain = kind === "image" && result?.image_detection?.available && result?.image_detection?.status === "inconclusive";
-  const level = imageUncertain ? "MEDIUM" : riskLevel(score);
-  const qualityOnly = result?.risk?.scope === "media_quality" || kind === "audio";
+  const audioDetection = result?.audio_forensics?.aasist_detection;
+  const audioAssessed = kind === "audio" && audioDetection?.available;
+  const audioUncertain = audioAssessed && audioDetection?.spoof_score == null;
+  const assessmentUncertain = imageUncertain || audioUncertain;
+  const level = assessmentUncertain ? "MEDIUM" : riskLevel(score);
+  const qualityOnly = result?.risk?.scope === "media_quality";
   const imageAssessed = kind === "image" && result?.image_detection?.available;
-  const bandLabel = imageUncertain ? "REVIEW · CLASSIFICATION UNCERTAIN" : level === "HIGH" ? "HIGH RISK · VERIFY SOURCE" : level === "MEDIUM" ? "MODERATE RISK · REVIEW" : "LOW RISK · FEWER AI INDICATIONS";
+  const bandLabel = imageUncertain ? "REVIEW · CLASSIFICATION UNCERTAIN" : audioUncertain ? "REVIEW · NOT ENOUGH SPEECH SIGNAL" : level === "HIGH" ? "HIGH RISK INDICATOR · VERIFY SOURCE" : level === "MEDIUM" ? "MODERATE INDICATOR · REVIEW" : audioAssessed ? "LOW SPOOF SIGNAL · NOT PROOF OF A REAL VOICE" : "LOW RISK · FEWER AI INDICATIONS";
   const signals = Object.entries(result?.signals || {}).filter(
     ([, value]) => typeof value === "number" && Number.isFinite(value)
   );
@@ -289,14 +293,14 @@ export default function MediaAnalysisPage({ onBack }) {
           ) : result ? (
             <div className="ma-result-content">
               <div className={`ma-score-card ${level === "HIGH" ? "high" : level === "MEDIUM" ? "medium" : "low"}`}>
-                <div className="ma-score-ring" style={{ "--score": `${imageUncertain ? 0 : score}%` }}>
-                  <span>{imageUncertain ? "—" : score}<small>{imageUncertain ? "needs review" : "/100"}</small></span>
+                <div className="ma-score-ring" style={{ "--score": `${assessmentUncertain ? 0 : score}%` }}>
+                  <span>{assessmentUncertain ? "—" : score}<small>{assessmentUncertain ? "needs review" : "/100"}</small></span>
                 </div>
                 <div className="ma-score-copy">
-                  <span className="ma-kicker">{result.media_type || kind.toUpperCase()} {imageAssessed ? "AI INDICATION" : qualityOnly ? "QUALITY" : "ANOMALY"} SCORE</span>
-                  <strong>{imageAssessed || !qualityOnly ? bandLabel : "QUALITY CHECK · AI DETECTOR UNAVAILABLE"}</strong>
+                  <span className="ma-kicker">{kind === "audio" && audioAssessed ? "AUDIO · AASIST ANTI-SPOOFING SIGNAL" : `${result.media_type || kind.toUpperCase()} ${imageAssessed ? "AI INDICATION" : qualityOnly ? "QUALITY" : "ANOMALY"} SCORE`}</span>
+                  <strong>{imageAssessed || audioAssessed || !qualityOnly ? bandLabel : "QUALITY CHECK · AI DETECTOR UNAVAILABLE"}</strong>
                   <p>{result.summary || "Review the signals below with the original file."}</p>
-                  <p>{imageAssessed ? "AI assessment is available. This model score can be wrong; it is not a probability or a fraud verdict." : "This quality or anomaly score cannot establish whether the file is real, AI-generated, or fraudulent."}</p>
+                  <p>{imageAssessed || audioAssessed ? "This experimental model signal can be wrong. It is not a calibrated probability, identity check, or fraud verdict." : "This quality or anomaly score cannot establish whether the file is real, AI-generated, or fraudulent."}</p>
                 </div>
               </div>
 
@@ -306,14 +310,15 @@ export default function MediaAnalysisPage({ onBack }) {
 
               {kind === "audio" && result.audio_forensics && (
                 <section className="ma-video-checks" aria-label="Audio analysis details">
-                  <h3>Audio quality checks performed</h3>
+                  <h3>Audio anti-spoofing and quality checks</h3>
                   <div className="ma-video-check-grid">
                     <div><span>Duration</span><strong>{result.audio_forensics.duration_seconds} sec</strong></div>
                     <div><span>Sample rate</span><strong>{result.audio_forensics.sample_rate} Hz</strong></div>
+                    <div><span>AASIST spoof signal</span><strong>{audioDetection?.spoof_score == null ? "Inconclusive" : `${audioDetection.spoof_score}/100 · ${audioDetection.windows_analyzed} windows`}</strong></div>
                     <div><span>Clipping</span><strong>{result.audio_forensics.clipping_percent}%</strong></div>
                     <div><span>Silence</span><strong>{result.audio_forensics.silence_percent}%</strong></div>
                   </div>
-                  <p>Clipping, silence, and noise describe audio quality. They cannot establish whether a voice is human or AI-generated.</p>
+                  <p>{audioDetection?.limitations || audioDetection?.error || "Clipping and silence describe recording quality; they do not establish whether a voice is human or AI-generated."}</p>
                 </section>
               )}
 
@@ -326,9 +331,9 @@ export default function MediaAnalysisPage({ onBack }) {
                     <div><span>Near-identical frames</span><strong>{Number(result.video_forensics.duplicate_frame_ratio || 0).toFixed(1)}%</strong></div>
                     <div><span>Average frame change</span><strong>{Number(result.video_forensics.average_frame_motion || 0).toFixed(2)}</strong></div>
                     <div><span>Face detected in frames</span><strong>{Number(result.video_forensics.face_metrics?.face_presence || 0).toFixed(0)}%</strong></div>
-                    <div><span>Audio analysis</span><strong>{result.video_forensics.audio?.success ? "Heuristic audio check" : "Unavailable"}</strong></div>
+                    <div><span>Audio anti-spoofing</span><strong>{result.video_forensics.audio_spoof_detection?.spoof_score == null ? "Inconclusive / unavailable" : `${result.video_forensics.audio_spoof_detection.spoof_score}/100`}</strong></div>
                   </div>
-                  <p>These are explainable frame and signal heuristics. This prototype does not run a trained AI deepfake classifier.</p>
+                  <p>Video frame checks are heuristics. Audio may include a local AASIST anti-spoofing signal; neither signal proves a video is genuine or manipulated.</p>
                 </section>
               )}
 

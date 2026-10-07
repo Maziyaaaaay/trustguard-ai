@@ -1,5 +1,6 @@
 from face_detector import detect_faces
 from image_classifier import classify_image
+from audio_classifier import classify_audio
 
 import asyncio
 import logging
@@ -3440,6 +3441,17 @@ def analyze_wav_audio(wav_path: str) -> Dict[str, Any]:
         else:
             spectral_flatness = 0.0
 
+        # Neural anti-spoofing output remains separate from acoustic quality.
+        try:
+            aasist_detection = classify_audio(normalized, sample_rate)
+        except Exception:
+            logger.exception("AASIST inference failed; continuing with audio-quality checks")
+            aasist_detection = {
+                "available": False,
+                "status": "unavailable",
+                "error": "The local anti-spoofing model could not run.",
+            }
+
         # Heuristic acoustic anomaly score.
         synthetic_risk = 0.0
         acoustic_reasons = []
@@ -3477,10 +3489,11 @@ def analyze_wav_audio(wav_path: str) -> Dict[str, Any]:
             "silence_percent": round(silence, 2),
             "spectral_flatness": round(spectral_flatness, 4),
             "synthetic_voice": synthetic_risk,
+            "aasist_detection": aasist_detection,
             "audio_quality_score": synthetic_risk,
-            "synthetic_speech_status": "not_assessed",
+            "synthetic_speech_status": aasist_detection.get("status", "unavailable"),
             "reasons": acoustic_reasons,
-            "method": "Acoustic heuristic signals; not a trained synthetic-voice classifier.",
+            "method": "AASIST anti-spoofing model plus separate acoustic-quality heuristics.",
         }
     except Exception as error:
         return {
@@ -3490,22 +3503,21 @@ def analyze_wav_audio(wav_path: str) -> Dict[str, Any]:
 
 
 def analyze_audio_bytes(content: bytes, filename: str) -> Dict[str, Any]:
-    """Analyze uploaded audio. WAV is native; other formats use FFmpeg."""
+    """Normalize uploaded audio to 16 kHz mono before analysis."""
     extension = Path(filename).suffix.lower() or ".wav"
     wav_path = None
     try:
-        if extension == ".wav":
+        wav_path = _video_audio_to_wav(content, extension)
+        if not wav_path and extension == ".wav":
             temp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
             temp.write(content)
             temp.close()
             wav_path = temp.name
-        else:
-            wav_path = _video_audio_to_wav(content, extension)
-            if not wav_path:
-                return {
-                    "success": False,
-                    "error": "The audio could not be decoded. Try a valid WAV, MP3, or M4A file.",
-                }
+        if not wav_path:
+            return {
+                "success": False,
+                "error": "The audio could not be decoded. Try a valid WAV, MP3, or M4A file.",
+            }
 
         return analyze_wav_audio(wav_path)
     finally:
@@ -3670,6 +3682,7 @@ def analyze_video_forensics(content: bytes, filename: str) -> Dict[str, Any]:
 
         audio_result = None
         synthetic_voice = 0
+        aasist_detection = None
         audio_note = "No audio forensic analysis was available."
         if _ffmpeg_executable():
             wav_path = _video_audio_to_wav(content, extension)
@@ -3678,6 +3691,7 @@ def analyze_video_forensics(content: bytes, filename: str) -> Dict[str, Any]:
                     audio_result = analyze_wav_audio(wav_path)
                     if audio_result.get("success"):
                         synthetic_voice = int(audio_result.get("synthetic_voice", 0))
+                        aasist_detection = audio_result.get("aasist_detection")
                         audio_note = "Audio track analyzed with acoustic heuristics."
                 finally:
                     try:
@@ -3689,12 +3703,20 @@ def analyze_video_forensics(content: bytes, filename: str) -> Dict[str, Any]:
 
         # If audio exists, include it without allowing a single weak acoustic signal to dominate.
         if audio_result and audio_result.get("success"):
-            combined_score = clamp_score(
+            acoustic_score = clamp_score(
                 synthetic_voice * 0.20
                 + face_manipulation * 0.25
                 + media_manipulation * 0.30
                 + replay_risk * 0.25
             )
+            spoof_score = (aasist_detection or {}).get("spoof_score")
+            if isinstance(spoof_score, (int, float)):
+                # Model output is a secondary cue; temporal and face evidence remain
+                # in the fusion, and the UI identifies the AASIST component.
+                combined_score = clamp_score(acoustic_score * 0.75 + spoof_score * 0.25)
+                ai_indicator = clamp_score(ai_indicator * 0.75 + spoof_score * 0.25)
+            else:
+                combined_score = acoustic_score
         else:
             combined_score = clamp_score(
                 face_manipulation * 0.30
@@ -3720,6 +3742,12 @@ def analyze_video_forensics(content: bytes, filename: str) -> Dict[str, Any]:
             findings.append("Face detection was intermittent across sampled frames.")
         if audio_result and audio_result.get("success"):
             findings.extend(audio_result.get("reasons", []))
+            if isinstance((aasist_detection or {}).get("spoof_score"), (int, float)):
+                findings.append(
+                    f"AASIST anti-spoofing signal: {aasist_detection['spoof_score']}/100. This is an experimental voice cue, not proof of synthetic speech."
+                )
+            elif aasist_detection and aasist_detection.get("status") == "inconclusive":
+                findings.append(aasist_detection.get("reason", "AASIST audio result is inconclusive."))
         else:
             findings.append(audio_note)
 
@@ -3744,11 +3772,12 @@ def analyze_video_forensics(content: bytes, filename: str) -> Dict[str, Any]:
             "average_frame_motion": round(average_motion, 2),
             "brightness_variation": round(brightness_cv, 2),
             "audio": audio_result,
+            "audio_spoof_detection": aasist_detection,
             "findings": findings,
             "analysis_note": (
-            "Video results are explainable frame and acoustic heuristics, not a trained deepfake detector or definitive proof of a deepfake."
+            "Video frame checks are heuristics. AASIST provides an experimental audio anti-spoofing signal; neither method proves a video is genuine or manipulated."
             ),
-            "method": "Sampled-frame, face/motion and optional acoustic heuristics.",
+            "method": "Sampled-frame, face/motion heuristics plus optional local AASIST audio inference.",
         }
     except Exception as error:
         return {
@@ -3847,15 +3876,31 @@ async def _analyze_media(file: UploadFile):
         if result.get("success"):
             result["kind"] = "audio"
             result["media_type"] = "AUDIO"
-            result["risk"] = result.get("audio_quality_score", 0)
-            result["signals"] = {
-                "audio_quality_anomaly": result.get("audio_quality_score", 0),
-            }
-            result["findings"] = result.get("reasons", []) or [
-                "No strong audio-quality anomaly detected. AI-generated speech was not assessed."
-            ]
+            detection = result.get("aasist_detection") or {}
+            model_score = detection.get("spoof_score")
+            result["risk"] = model_score if detection.get("available") else result.get("audio_quality_score", 0)
+            result["signals"] = {"audio_quality_anomaly": result.get("audio_quality_score", 0)}
+            if isinstance(model_score, (int, float)):
+                result["signals"] = {
+                    "ai_audio_spoof_indicator": model_score,
+                    **result["signals"],
+                }
+            result["findings"] = list(result.get("reasons", []))
+            if detection.get("status") == "high_spoof_signal":
+                result["findings"].append("AASIST raised a strong audio anti-spoofing signal. Verify the recording through another channel.")
+            elif detection.get("status") == "review_spoof_signal":
+                result["findings"].append("AASIST raised an intermediate anti-spoofing signal. Review the recording and verify the speaker separately.")
+            elif detection.get("status") == "low_spoof_signal":
+                result["findings"].append("AASIST raised a low spoofing signal. This does not establish that the voice is genuine.")
+            elif detection.get("status") == "inconclusive":
+                result["findings"].append(detection.get("reason", "The AASIST result is inconclusive; review the recording."))
+            elif not detection.get("available"):
+                result["findings"].append(detection.get("error", "AASIST was unavailable; synthetic speech was not assessed."))
+            if not result["findings"]:
+                result["findings"].append("No separate audio-quality warning was raised.")
             result["analysis_note"] = (
-                "Audio results are acoustic heuristics, not definitive proof of synthetic speech."
+                detection.get("limitations") or
+                "The AASIST model and audio-quality checks provide review signals, not proof that a voice is real or synthetic."
             )
     elif kind == "image":
         result = await run_in_threadpool(analyze_image_media, content, filename, content_type)
@@ -3878,14 +3923,27 @@ async def _analyze_media(file: UploadFile):
             "error": "The uploaded media could not be decoded or analyzed. Check the file format and limits, then try again.",
         }
 
-    risk_score = clamp_score(result.get("risk", 0))
+    risk_score = clamp_score(result.get("risk") or 0)
     signals = result.get("signals", {})
     image_detection = result.get("image_detection") or {}
+    audio_detection = result.get("aasist_detection") or {}
+    if kind == "video":
+        audio_detection = (result.get("audio_spoof_detection") or {})
     image_assessed = kind == "image" and image_detection.get("available", False)
     if image_assessed:
         risk_score = clamp_score(image_detection["synthetic_model_score"])
         # Uncertain classifier outputs must not become confident AI warnings.
         signals = signals if image_detection.get("status") == "inconclusive" else {"ai_image_indicator": risk_score, **signals}
+    audio_assessed = audio_detection.get("available", False)
+    audio_uncertain = kind == "audio" and audio_assessed and audio_detection.get("spoof_score") is None
+    if kind == "audio" and audio_assessed and not audio_uncertain:
+        risk_score = clamp_score(audio_detection.get("spoof_score", 0))
+        signals = {
+            "ai_audio_spoof_indicator": risk_score,
+            "audio_quality_anomaly": result.get("audio_quality_score", 0),
+        }
+    if kind == "video" and audio_assessed and isinstance(audio_detection.get("spoof_score"), (int, float)):
+        signals = {"ai_audio_spoof_indicator": audio_detection["spoof_score"], **signals}
     image_uncertain = image_assessed and image_detection.get("status") == "inconclusive"
     image_level = get_risk_level(risk_score)
     image_summary = {
@@ -3893,6 +3951,15 @@ async def _analyze_media(file: UploadFile):
         "MEDIUM": "Moderate AI indication. Review the source and original file before deciding.",
         "HIGH": "High AI indication. Verify the source; the model can falsely flag real photographs.",
     }[image_level]
+    audio_summary = (
+        "AASIST raised a high anti-spoofing signal. Verify the speaker independently; this is not a fraud verdict."
+        if audio_detection.get("status") == "high_spoof_signal" else
+        "AASIST raised an intermediate anti-spoofing signal. Review the recording and verify the speaker separately."
+        if audio_detection.get("status") == "review_spoof_signal" else
+        "AASIST raised a low spoofing signal. This does not prove the recording is genuine."
+        if audio_detection.get("status") == "low_spoof_signal" else
+        "AASIST output is a review cue only. Check the recording and verify the speaker separately."
+    )
 
     if not signals:
         signals = {
@@ -3915,15 +3982,15 @@ async def _analyze_media(file: UploadFile):
         "kind": result.get("kind", kind),
         "media_type": result.get("media_type", kind.upper()),
         "risk": {
-            "score": None if image_uncertain else risk_score,
-            "level": "REVIEW" if image_uncertain else get_risk_level(risk_score) if kind == "video" or image_assessed else "UNVERIFIED",
-            "scope": "ai_image_indicator" if image_assessed else "temporal_anomalies" if kind == "video" else "media_quality",
+            "score": None if image_uncertain or audio_uncertain else risk_score,
+            "level": "REVIEW" if image_uncertain or audio_uncertain else get_risk_level(risk_score) if kind == "video" or image_assessed or (kind == "audio" and audio_assessed) else "UNVERIFIED",
+            "scope": "ai_image_indicator" if image_assessed else "ai_audio_spoof_indicator" if kind == "audio" and audio_assessed else "temporal_anomalies" if kind == "video" else "media_quality",
         },
         "authenticity": {
-            "status": "assessed" if image_assessed else "unverified",
-            "ai_detection_available": bool(result.get("image_detection", {}).get("available")),
-            "method": "local_pretrained_image_classifier" if result.get("image_detection", {}).get("available") else "signal_heuristics",
-            "message": "Image classification is an experimental assessment, not proof of authenticity. A low quality anomaly score does not establish that media is real or safe.",
+            "status": "assessed" if image_assessed or audio_assessed else "unverified",
+            "ai_detection_available": bool(image_assessed or audio_assessed),
+            "method": "local_pretrained_image_classifier" if image_assessed else "local_aasist_anti_spoofing_model" if audio_assessed else "signal_heuristics",
+            "message": "Model output is an experimental review signal, not proof of authenticity, identity, or fraud.",
         },
         "signals": signals,
         "video_forensics": result if kind == "video" else None,
@@ -3936,7 +4003,8 @@ async def _analyze_media(file: UploadFile):
         "image_detection": result.get("image_detection"),
         "findings": result.get("findings", []),
         "summary": (
-            "The image classifier is uncertain. No AI/fake label or final risk score is assigned; review the original source." if image_uncertain else image_summary if image_assessed else (
+            "The image classifier is uncertain. No AI/fake label or final risk score is assigned; review the original source." if image_uncertain else image_summary if image_assessed else
+            "The voice anti-spoofing model is inconclusive. No final risk score was assigned; review the recording and verify the speaker separately." if audio_uncertain else audio_summary if kind == "audio" and audio_assessed else (
                 "Authenticity unverified. Few anomalies were found by basic signal checks; AI-generated media can pass these checks."
                 if risk_score < 30 else "Quality or temporal anomalies warrant review. These do not establish AI generation or fraud."
             )

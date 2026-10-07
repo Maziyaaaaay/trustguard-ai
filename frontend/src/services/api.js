@@ -53,9 +53,13 @@ export async function analyzeMediaFile(file, { signal } = {}) {
   const score = data.risk?.score;
   const validScore = typeof score === "number" && Number.isFinite(score) && score >= 0 && score <= 100;
   // The backend deliberately withholds a score when image classification is uncertain.
-  const validReview = score === null && data.kind === "image" &&
-    data.risk?.level === "REVIEW" && data.risk?.scope === "ai_image_indicator" &&
-    data.image_detection?.available === true && data.image_detection?.status === "inconclusive";
+  const validReview = score === null && data.risk?.level === "REVIEW" && (
+    (data.kind === "image" && data.risk?.scope === "ai_image_indicator" &&
+      data.image_detection?.available === true && data.image_detection?.status === "inconclusive") ||
+    (data.kind === "audio" && data.risk?.scope === "ai_audio_spoof_indicator" &&
+      data.audio_forensics?.aasist_detection?.available === true &&
+      data.audio_forensics?.aasist_detection?.status === "inconclusive")
+  );
   if (data.success !== true || (!validScore && !validReview)) {
     throw new Error(
       "The analysis service returned an incomplete result. No safety rating was assigned; check the backend and try again."
