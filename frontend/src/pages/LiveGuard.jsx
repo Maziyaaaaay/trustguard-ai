@@ -165,6 +165,7 @@ function LiveGuard({ onBack })  {
   const challengeChannelRef = useRef(null);
   const challengePromptRef = useRef(null);
   const sampledVideoTimeRef = useRef(null);
+  const livenessRetryTimerRef = useRef(null);
 
   const challengeRef =
     useRef("WAITING");
@@ -546,6 +547,13 @@ function LiveGuard({ onBack })  {
           setAnalysisStatus(
             "PREPARING REMOTE VIDEO"
           );
+
+          // Arm the movement check as soon as the analyst receives the
+          // caller stream. It begins after a single face is stable in frame;
+          // callers do not need to find or press a separate start button.
+          challengeArmedRef.current = true;
+          setLivenessStatus("WAITING FOR FACE");
+          publishChallenge("Live movement check is ready. Face the camera and follow the prompt when it appears.");
 
           const videoTracks =
             remoteStream.getVideoTracks();
@@ -1254,16 +1262,6 @@ function LiveGuard({ onBack })  {
     }
   }
 
-  function beginLivenessChallenge() {
-    resetLiveness();
-    challengeArmedRef.current = true;
-    setLivenessStatus("FACE THE CAMERA — GET READY");
-    publishChallenge("Face the camera. Get ready for a movement prompt.");
-    setRiskScore(null);
-    setRiskLevel("ANALYZING");
-    setWarningVisible(false);
-  }
-
   function pauseLivenessChallenge(message) {
     if (challengeRef.current === "TURN") {
       challengePausedRef.current = true;
@@ -1374,7 +1372,7 @@ function LiveGuard({ onBack })  {
         `MOVE YOUR NOSE TO SCREEN ${challengeDirectionRef.current}`
       );
 
-      publishChallenge(`Move your nose toward the ${challengeDirectionRef.current === "LEFT" ? "← LEFT" : "RIGHT →"} side of the screen. Turn gently and hold for half a second.`);
+      publishChallenge(`Live movement check: move your nose toward the ${challengeDirectionRef.current === "LEFT" ? "← LEFT" : "RIGHT →"} side of the screen. Turn gently and hold for half a second.`);
       setLivenessScore(25);
 
       /*
@@ -1519,19 +1517,39 @@ function LiveGuard({ onBack })  {
     livenessRiskRef.current = 35;
     publishChallenge("The movement challenge was not completed. Ask the analyst to retry; this does not prove fraud.");
 
+    // Retry automatically after a short pause. A missed prompt is only a
+    // review signal and must not be treated as proof of replay or fraud.
+    if (livenessRetryTimerRef.current) {
+      window.clearTimeout(livenessRetryTimerRef.current);
+    }
+    livenessRetryTimerRef.current = window.setTimeout(() => {
+      livenessRetryTimerRef.current = null;
+      if (!remoteConnectedRef.current) return;
+      challengeRef.current = "WAITING";
+      challengeArmedRef.current = true;
+      faceFoundAtRef.current = performance.now() - 1201;
+      baselineYawRef.current = null;
+      headTurnStartRef.current = null;
+      setLivenessStatus("RETRYING MOVEMENT CHECK — FOLLOW THE NEW PROMPT");
+    }, 3000);
+
     setAnalysisStatus(
       "MOVEMENT CHALLENGE NEEDS RETRY"
     );
 
     setRiskReasons(
       [
-        "Unpredictable liveness challenge was not completed",
+        "Movement prompt not completed; the check will retry automatically",
       ]
     );
   }
 
   function resetLiveness() {
-    challengeArmedRef.current = false;
+    if (livenessRetryTimerRef.current) {
+      window.clearTimeout(livenessRetryTimerRef.current);
+      livenessRetryTimerRef.current = null;
+    }
+    challengeArmedRef.current = true;
     challengePromptRef.current = null;
     challengeRef.current =
       "WAITING";
@@ -1559,9 +1577,7 @@ function LiveGuard({ onBack })  {
     livenessRiskRef.current =
       0;
 
-    setLivenessStatus(
-      "START THE MOVEMENT CHALLENGE WHEN READY"
-    );
+    setLivenessStatus("WAITING FOR FACE");
 
     setLivenessScore(
       null
@@ -1578,7 +1594,6 @@ function LiveGuard({ onBack })  {
     lastSampleTimeRef.current = now;
     if (sampledVideoTimeRef.current === video.currentTime) {
       pauseLivenessChallenge("VIDEO PAUSED — WAITING FOR FRESH FRAMES");
-      return;
     }
     sampledVideoTimeRef.current = video.currentTime;
 
@@ -3416,9 +3431,8 @@ function LiveGuard({ onBack })  {
 
           <section className="analysis-card lg-live-checks" aria-live="polite">
             <div className="analysis-title-row"><div><span className="card-label">LIVE CHECKS</span><h2>Movement & replay</h2></div></div>
-            <SignalBox title="LIVENESS / MOVEMENT" value={livenessScore == null ? "Not started" : `${livenessScore}% challenge progress`} status={livenessStatus} good={livenessStatus === "LIVENESS VERIFIED"} />
-            <button className="lg-challenge-button" type="button" onClick={beginLivenessChallenge} disabled={!remoteConnected || livenessStatus.includes("MOVE YOUR NOSE") || livenessStatus.includes("HOLD POSITION")}>{livenessStatus === "LIVENESS VERIFIED" ? "Run a new challenge" : livenessStatus.includes("RETRY") ? "Retry movement challenge" : "Start movement challenge"}</button>
-            <p className="lg-caption">Follow the arrow on this screen or the caller’s phone. Turn gently and hold for half a second. Allow up to 15 seconds.</p>
+            <SignalBox title="LIVENESS / MOVEMENT" value={livenessScore == null ? (remoteConnected ? "Waiting for one face" : "Waiting for caller") : `${livenessScore}% challenge progress`} status={livenessStatus} good={livenessStatus === "LIVENESS VERIFIED"} />
+            <p className="lg-caption">The check starts automatically when one face is visible. Follow the on-screen prompt, turn gently, and hold for half a second. If a try is missed, it retries automatically.</p>
             <SignalBox title="FREEZE / LOOP CHECK" value={videoRiskStatus === "WAITING" ? "Collecting frames" : `${replayScore}/100 indication`} status={videoRiskStatus} good={videoRiskStatus === "NO STRONG REPLAY SIGNAL"} />
           </section>
           <section className={`analysis-card lg-risk ${riskLevel.toLowerCase()}`} aria-live="polite">

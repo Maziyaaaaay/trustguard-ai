@@ -59,9 +59,11 @@ export function hasOrderedLoop(history, sequenceLength = 6) {
     const lag = current[0].sampledAt - history[start].sampledAt;
     if (lag < 1500 || lag > 12000) continue;
     const matches = current.filter((item, index) =>
-      fingerprintDistance(item.signature, history[start + index].signature) <= 0.02
+      fingerprintDistance(item.signature, history[start + index].signature) <= 0.05
     ).length;
-    if (matches === sequenceLength) return true;
+    // Permit a small amount of capture/compression noise while still
+    // requiring nearly the entire ordered sequence to repeat.
+    if (matches >= sequenceLength - 1) return true;
   }
   return false;
 }
@@ -97,10 +99,11 @@ export function scoreTemporalSignals(
   const repeatWindow = repeatedFrames.slice(-16);
   const repeatRatio =
     repeatWindow.filter(Boolean).length / Math.max(repeatWindow.length, 1);
-  if (repeatWindow.length >= 12 && repeatRatio >= 0.6) {
+  // repeatedFrames are only set when an ordered multi-frame loop is found.
+  // Requiring a sustained fraction of those loop matches avoids reacting to
+  // one-off duplicate frames while ensuring a persistent loop reaches HIGH.
+  if (repeatWindow.length >= 8 && repeatRatio >= 0.4) {
     score = Math.max(score, 78);
-  } else if (repeatWindow.length >= 10 && repeatRatio >= 0.4) {
-    score = Math.max(score, 52);
   }
 
   const disruptionWindow = disruptions.slice(-16);
@@ -176,7 +179,7 @@ export function calculateTrustGuardRisk({
   // Strong direct interaction or temporal anomalies must cross the project's
   // >50 HIGH threshold. This warns of risk; it does not prove deepfake content.
   if (livenessFailed) adjustedScore = Math.max(adjustedScore, 35);
-  if (typeof replayRisk === "number" && replayRisk >= 65) {
+  if (typeof replayRisk === "number" && replayRisk >= 55) {
     adjustedScore = Math.max(adjustedScore, 55);
   }
 

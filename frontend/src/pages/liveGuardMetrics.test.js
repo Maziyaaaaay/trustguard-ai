@@ -114,3 +114,36 @@ test("sustained loop evidence flags high before a challenge completes", () => {
   assert.equal(result.level, "HIGH");
   assert.ok(result.score > 50);
 });
+
+test("sustained ordered-loop matches alone raise replay risk above 50", () => {
+  const loopSignals = scoreTemporalSignals(
+    Array(20).fill(12),
+    [...Array(6).fill(false), ...Array(6).fill(true)],
+    Array(12).fill(false)
+  );
+  const fused = calculateTrustGuardRisk({
+    replayRisk: loopSignals.score,
+    livenessCompleted: false,
+    faceConsistencyRisk: 0,
+    facePresenceRisk: 0,
+  });
+
+  assert.ok(loopSignals.score >= 70);
+  assert.ok(fused.score > 50);
+  assert.equal(fused.level, "HIGH");
+});
+
+test("ordered loops tolerate minor capture noise but stationary frames are not loops", () => {
+  const repeated = Array.from({ length: 40 }, (_, i) => {
+    const signature = Array(96).fill((i % 8) * 4);
+    if (i % 8 === 3) signature[0] += 4;
+    return { signature, sampledAt: i * 250 };
+  });
+  const stationary = Array.from({ length: 40 }, (_, i) => ({
+    signature: Array(96).fill(40),
+    sampledAt: i * 250,
+  }));
+
+  assert.equal(hasOrderedLoop(repeated), true);
+  assert.equal(hasOrderedLoop(stationary), false);
+});
