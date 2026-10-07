@@ -8,6 +8,7 @@ import {
   calculateTrustGuardRisk,
   hasOrderedLoop,
   getFrameFingerprint,
+  latchReplayLoopEvidence,
   scoreTemporalSignals,
 } from "./liveGuardMetrics";
 import "./LiveGuard.css";
@@ -1669,18 +1670,22 @@ function LiveGuard({ onBack })  {
         repeatedFrameHistoryRef.current,
         frameDisruptionHistoryRef.current
       );
-      replayRiskRef.current = temporal.score;
-      orderedLoopDetectedRef.current = temporal.orderedLoopDetected;
-      setReplayScore(temporal.score);
+      const replayEvidence = latchReplayLoopEvidence(
+        orderedLoopDetectedRef.current,
+        temporal
+      );
+      replayRiskRef.current = replayEvidence.score;
+      orderedLoopDetectedRef.current = replayEvidence.orderedLoopDetected;
+      setReplayScore(replayEvidence.score);
       setFrameFreshness(temporal.freshness);
 
-      if (temporal.score >= 70) {
+      if (replayEvidence.orderedLoopDetected) {
+        setVideoRiskStatus("REPEATING LOOP DETECTED · POSSIBLE REPLAY");
+      } else if (temporal.score >= 70) {
         setVideoRiskStatus(
-          temporal.orderedLoopDetected
-            ? "REPEATING LOOP DETECTED · POSSIBLE REPLAY"
-            : temporal.disruptionCount >= 2
-              ? "REPEATED FRAME DISRUPTION"
-              : "HIGH REPLAY INDICATOR"
+          temporal.disruptionCount >= 2
+            ? "REPEATED FRAME DISRUPTION"
+            : "HIGH REPLAY INDICATOR"
         );
       } else if (temporal.score >= 35) {
         setVideoRiskStatus("REVIEW VIDEO SIGNALS");

@@ -124,6 +124,17 @@ export function scoreTemporalSignals(
   };
 }
 
+// Once a complete ordered loop is observed, keep that warning for the current
+// call. A rolling sample window naturally forgets the loop after playback
+// advances, but that must not erase a confirmed replay cue from the session.
+export function latchReplayLoopEvidence(previouslyDetected, temporal) {
+  const orderedLoopDetected = previouslyDetected || temporal.orderedLoopDetected;
+  return {
+    orderedLoopDetected,
+    score: orderedLoopDetected ? Math.max(78, temporal.score) : temporal.score,
+  };
+}
+
 export function getRiskLevel(score) {
   if (score > 50) return "HIGH";
   if (score >= 30) return "MEDIUM";

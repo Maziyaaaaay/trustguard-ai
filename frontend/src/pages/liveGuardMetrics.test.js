@@ -4,6 +4,7 @@ import {
   calculateTrustGuardRisk,
   hasOrderedLoop,
   getRiskLevel,
+  latchReplayLoopEvidence,
   scoreTemporalSignals,
 } from "./liveGuardMetrics.js";
 
@@ -149,6 +150,31 @@ test("sustained ordered-loop matches alone raise replay risk above 50", () => {
   assert.ok(fused.score > 50);
   assert.equal(fused.level, "HIGH");
   assert.ok(fused.reasons.some((reason) => reason.includes("Strong replay")));
+});
+
+test("a detected playback loop stays high after the rolling window advances", () => {
+  const loop = scoreTemporalSignals(
+    Array(20).fill(12),
+    [...Array(6).fill(false), ...Array(6).fill(true)],
+    Array(12).fill(false)
+  );
+  const latched = latchReplayLoopEvidence(false, loop);
+  const laterCleanWindow = scoreTemporalSignals(
+    Array(20).fill(18),
+    Array(16).fill(false),
+    Array(16).fill(false)
+  );
+  const afterLoop = latchReplayLoopEvidence(
+    latched.orderedLoopDetected,
+    laterCleanWindow
+  );
+  const combined = calculateTrustGuardRisk({ replayRisk: afterLoop.score });
+
+  assert.equal(latched.orderedLoopDetected, true);
+  assert.equal(afterLoop.orderedLoopDetected, true);
+  assert.equal(afterLoop.score, 78);
+  assert.equal(combined.level, "HIGH");
+  assert.ok(combined.score > 50);
 });
 
 test("ordered loops tolerate minor capture noise but stationary frames are not loops", () => {
