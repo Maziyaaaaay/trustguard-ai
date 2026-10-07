@@ -17,7 +17,7 @@ Softmax score is not calibrated as probability. Provisional conservative thresho
 Not a fraud, identity or factual-truth detector. Metadata does not change its score.
 No photo is sent to Hugging Face or an external detector. Model weights are bundled.
 Location metadata remains internal. Neither GPS presence nor raw EXIF is returned in image API results. It does not automatically change the model score.
-Image quality/recompression score remains separate. The primary image risk score uses the rounded AI class score and Live Guard bands: 0–29 low, 30–50 review, 51–100 high. These policy bands do not alter the classifier uncertainty thresholds or improve accuracy.
+Image quality/recompression score remains separate. The primary image risk score uses the rounded AI class score and Live Guard bands: 0–29 low, 30–50 review, 51–100 high. These policy bands do not alter the classifier uncertainty thresholds or improve accuracy. Inconclusive classifier outputs receive a null final score and REVIEW status instead of a high-risk warning. This applies to all images, without sample-specific overrides.
 
 ## Evaluation limitations
 

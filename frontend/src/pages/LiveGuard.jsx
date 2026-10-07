@@ -958,7 +958,7 @@ function LiveGuard({ onBack })  {
         landmarker;
 
       setAnalysisStatus(
-        "LIVE FORENSIC ANALYSIS"
+        "CONNECTED · SIGNAL REVIEW"
       );
 
       startDetection();
@@ -1139,7 +1139,7 @@ function LiveGuard({ onBack })  {
           }
 
           setAnalysisStatus(
-            "LIVE FORENSIC ANALYSIS"
+            "CONNECTED · SIGNAL REVIEW"
           );
 
           processLiveness(
@@ -1466,7 +1466,7 @@ function LiveGuard({ onBack })  {
       5;
 
     setAnalysisStatus(
-      "LIVE FORENSIC ANALYSIS"
+      "CONNECTED · SIGNAL REVIEW"
     );
   }
 
@@ -2956,17 +2956,6 @@ function LiveGuard({ onBack })  {
     }
   }
 
-  const riskColor =
-    riskLevel ===
-    "HIGH"
-      ? "#ff4d6d"
-      : riskLevel ===
-          "MEDIUM"
-        ? "#f5c86a"
-        : riskLevel === "ANALYZING"
-          ? "#8391a4"
-          : "#44ff9a";
-
   return (
     <div className="liveguard-page">
 
@@ -2974,6 +2963,7 @@ function LiveGuard({ onBack })  {
         <button
           type="button"
           onClick={onBack}
+          className="lg-back"
           style={{
             marginBottom: "14px",
             padding: "9px 12px",
@@ -3003,8 +2993,7 @@ function LiveGuard({ onBack })  {
           </h1>
 
           <p>
-            Real-time caller verification
-            and fraud-risk analysis.
+            A calmer way to review a live call. Connect, observe, then verify.
           </p>
 
         </div>
@@ -3125,6 +3114,98 @@ function LiveGuard({ onBack })  {
 
         </div>
       )}
+
+          {/* CONNECTION */}
+
+          <div className="connection-card">
+
+            <span className="card-label">
+              01 · CONNECT YOUR CALL
+            </span>
+
+            <label className="input-label" htmlFor="live-caller-id">
+              Caller ID
+            </label>
+
+            <input
+              className="caller-input"
+              id="live-caller-id"
+              value={callerId}
+              onChange={(e) =>
+                setCallerId(
+                  e.target.value
+                )
+              }
+              placeholder="Paste phone Caller ID"
+            />
+
+            <button
+              className="connect-button"
+              onClick={
+                connectToCaller
+              }
+              disabled={
+                !analystPeerId ||
+                !callerId.trim() ||
+                remoteConnected
+              }
+              type="button"
+            >
+              {remoteConnected
+                ? "CALL CONNECTED"
+                : "CONNECT TO CALLER"}
+            </button>
+
+            <div className="call-status">
+
+              <span
+                className={
+                  callStatus ===
+                  "CONNECTED"
+                    ? "status-good"
+                    : "status-neutral"
+                }
+              >
+                ●
+              </span>
+
+              {callStatus}
+
+            </div>
+
+            <details className="lg-advanced"><summary>Connection details</summary>
+            <div className="id-block">
+
+              <span>
+                Your Analyst ID
+              </span>
+
+              <div className="id-row">
+
+                <code>
+                  {analystPeerId ||
+                    "Generating..."}
+                </code>
+
+                <button
+                  className="small-button"
+                  onClick={
+                    copyAnalystId
+                  }
+                  disabled={
+                    !analystPeerId
+                  }
+                  type="button"
+                >
+                  Copy
+                </button>
+
+              </div>
+
+            </div>
+
+            </details>
+          </div>
 
       <div className="liveguard-grid">
 
@@ -3256,7 +3337,7 @@ function LiveGuard({ onBack })  {
             {remoteConnected && (
               <div className="video-live-tag">
                 <span />
-                LIVE FORENSIC ANALYSIS
+                CONNECTED · SIGNAL REVIEW
               </div>
             )}
 
@@ -3265,7 +3346,7 @@ function LiveGuard({ onBack })  {
           <div className="video-footer">
 
             <span>
-              WebRTC protected session
+              02 · WATCH & COMPLETE THE CHALLENGE
             </span>
 
             {remoteConnected && (
@@ -3303,307 +3384,20 @@ function LiveGuard({ onBack })  {
 
         <aside className="analysis-panel">
 
-          {/* RISK */}
-
-          <div className="analysis-card">
-
-            <div className="analysis-title-row">
-
-              <div>
-
-                <span className="card-label">
-                  TRUSTGUARD RISK ENGINE
-                </span>
-
-                <h2>
-                  Combined Risk
-                </h2>
-
-              </div>
-
-              <div
-                style={{
-                  padding:
-                    "6px 10px",
-                  borderRadius:
-                    "7px",
-                  background:
-                    riskLevel ===
-                    "HIGH"
-                      ? "#2a1018"
-                      : riskLevel ===
-                        "MEDIUM"
-                        ? "#251f0c"
-                        : "#0b2015",
-                  color:
-                    riskColor,
-                  fontSize:
-                    "10px",
-                  fontWeight:
-                    900,
-                }}
-              >
-                {riskLevel}
-              </div>
-
-            </div>
-
-            <div
-              style={{
-                margin:
-                  "8px 20px 18px",
-                padding:
-                  "18px",
-                borderRadius:
-                  "14px",
-                background:
-                  "#080e15",
-                border:
-                  `1px solid ${riskColor}33`,
-                textAlign:
-                  "center",
-              }}
-            >
-
-              <div
-                style={{
-                  color:
-                    riskColor,
-                  fontSize:
-                    "48px",
-                  lineHeight:
-                    1,
-                  fontWeight:
-                    900,
-                }}
-              >
-                {riskScore == null ? "—" : riskScore}
-              </div>
-
-              <div
-                style={{
-                  marginTop:
-                    "7px",
-                  color:
-                    "#647287",
-                  fontSize:
-                    "9px",
-                  fontWeight:
-                    800,
-                }}
-              >
-                TRUSTGUARD HEURISTIC RISK SCORE
-              </div>
-
-              <div
-                style={{
-                  marginTop:
-                    "12px",
-                  height:
-                    "7px",
-                  borderRadius:
-                    "10px",
-                  background:
-                    "#18222d",
-                  overflow:
-                    "hidden",
-                }}
-              >
-
-                <div
-                  style={{
-                    width:
-                      `${riskScore ?? 0}%`,
-                    height:
-                      "100%",
-                    background:
-                      riskColor,
-                    transition:
-                      "width 0.4s ease",
-                  }}
-                />
-
-              </div>
-
-            </div>
-
-            <div className="metric-list">
-
-              <div className="metric">
-                <span>
-                  Liveness risk
-                </span>
-
-                <strong>
-                  {challengeRef.current === "PASSED" ||
-                  challengeRef.current === "FAILED"
-                    ? `${Math.round(livenessRiskRef.current)}/100`
-                    : "—"}
-                </strong>
-              </div>
-
-              <div className="metric">
-                <span>
-                  Replay risk
-                </span>
-
-                <strong>
-                  {videoRiskStatus === "WAITING" ? "—" : replayScore + "/100"}
-                </strong>
-              </div>
-
-              <div className="metric">
-                <span>
-                  Face consistency
-                </span>
-
-                <strong>
-                  {consistencyStatus === "WAITING" ? "—" : consistencyRisk + "/100"}
-                </strong>
-              </div>
-
-              <div className="metric">
-                <span>
-                  Voice anomaly
-                </span>
-
-                <strong>
-                  {voiceAnomalyRisk == null ? "—" : voiceAnomalyRisk + "/100"}
-                </strong>
-              </div>
-
-            </div>
-
-            <div
-              style={{
-                margin:
-                  "16px 20px 0",
-              }}
-            >
-
-              <span className="card-label">
-                RISK REASONS
-              </span>
-
-              <div
-                style={{
-                  marginTop:
-                    "10px",
-                  display:
-                    "flex",
-                  flexDirection:
-                    "column",
-                  gap:
-                    "7px",
-                }}
-              >
-
-                {riskReasons.map(
-                  (
-                    reason,
-                    index
-                  ) => (
-                    <div
-                      key={index}
-                      style={{
-                        display:
-                          "flex",
-                        gap:
-                          "8px",
-                        alignItems:
-                          "flex-start",
-                        padding:
-                          "8px 9px",
-                        borderRadius:
-                          "8px",
-                        background:
-                          "#0d141e",
-                        color:
-                          "#8895a5",
-                        fontSize:
-                          "10px",
-                        lineHeight:
-                          1.4,
-                      }}
-                    >
-
-                      <span
-                        style={{
-                          color:
-                            riskColor,
-                        }}
-                      >
-                        ●
-                      </span>
-
-                      {reason}
-
-                    </div>
-                  )
-                )}
-
-              </div>
-
-            </div>
-
-            <div
-              style={{
-                margin:
-                  "16px 20px 0",
-                padding:
-                  "13px",
-                borderRadius:
-                  "10px",
-                border:
-                  `1px solid ${riskColor}33`,
-                background:
-                  "#0b1219",
-              }}
-            >
-
-              <div
-                style={{
-                  color:
-                    riskColor,
-                  fontSize:
-                    "10px",
-                  fontWeight:
-                    900,
-                }}
-              >
-                RECOMMENDATION
-              </div>
-
-              <div
-                style={{
-                  marginTop:
-                    "6px",
-                  color:
-                    "#e7edf4",
-                  fontSize:
-                    "12px",
-                  fontWeight:
-                    800,
-                  lineHeight:
-                    1.5,
-                }}
-              >
-                {riskLevel === "HIGH"
-                  ? "HIGH-RISK WARNING — STOP AND VERIFY THROUGH AN OFFICIAL CHANNEL"
-                  : riskLevel === "MEDIUM"
-                    ? "REVIEW NEEDED — INDEPENDENTLY VERIFY BEFORE PROCEEDING"
-                    : riskLevel === "ANALYZING"
-                      ? "ANALYZING — NOT ENOUGH LIVE FRAMES FOR A RISK SCORE"
-                      : "LOWER CONCERN — AVAILABLE HEURISTICS FOUND NO STRONG WARNING"}
-              </div>
-
-            </div>
-
-          </div>
+          <section className={`analysis-card lg-risk ${riskLevel.toLowerCase()}`} aria-live="polite">
+            <div className="analysis-title-row"><div><span className="card-label">03 · REVIEW THE SIGNALS</span><h2>Call risk overview</h2></div><span className="lg-risk-status">{riskScore == null ? "Waiting for evidence" : riskLevel}</span></div>
+            <div className="lg-risk-number">{riskScore == null ? "—" : riskScore}<small>{riskScore == null ? "No score yet" : " / 100"}</small></div>
+            <div className="lg-risk-track"><span style={{ width: `${riskScore ?? 0}%` }} /></div>
+            <div className="lg-bands"><span>0–29 · Low</span><span>30–50 · Review</span><span>51–100 · High</span></div>
+            <p className="lg-recommendation">{riskLevel === "HIGH" ? "Pause the call and verify through an official channel." : riskLevel === "MEDIUM" ? "Review the clues and verify independently before proceeding." : riskScore == null ? "Connect a caller, keep their face visible, and complete the movement challenge." : "Fewer warning signals found. Verify independently before sharing money or personal details."}</p>
+            {riskReasons.length > 0 && <ul className="lg-reasons">{riskReasons.map((reason, index) => <li key={index}>{reason}</li>)}</ul>}
+            <p className="lg-caption">A signal assessment, not proof of identity, AI generation, or fraud.</p>
+          </section>
 
           {/* MEDIA */}
-
-          <div className="analysis-card">
+          <details className="analysis-card lg-details">
+            <summary>Explore signal details <span>＋</span></summary>
+            <div>
 
             <div className="analysis-title-row">
 
@@ -3715,96 +3509,9 @@ function LiveGuard({ onBack })  {
               <div className="metric"><span>Recent speech-like samples</span><strong>{voiceProfileStatus.includes("WAITING") || voiceProfileStatus.includes("UNAVAILABLE") || voiceProfileStatus.includes("NO AUDIO") ? "—" : `${speechActivity}%`}</strong></div>
             </div>
 
-          </div>
-
-          {/* CONNECTION */}
-
-          <div className="connection-card">
-
-            <span className="card-label">
-              ANALYST CONNECTION
-            </span>
-
-            <div className="id-block">
-
-              <span>
-                Your Analyst ID
-              </span>
-
-              <div className="id-row">
-
-                <code>
-                  {analystPeerId ||
-                    "Generating..."}
-                </code>
-
-                <button
-                  className="small-button"
-                  onClick={
-                    copyAnalystId
-                  }
-                  disabled={
-                    !analystPeerId
-                  }
-                  type="button"
-                >
-                  Copy
-                </button>
-
-              </div>
-
             </div>
+          </details>
 
-            <label className="input-label">
-              Caller ID
-            </label>
-
-            <input
-              className="caller-input"
-              value={callerId}
-              onChange={(e) =>
-                setCallerId(
-                  e.target.value
-                )
-              }
-              placeholder="Paste phone Caller ID"
-            />
-
-            <button
-              className="connect-button"
-              onClick={
-                connectToCaller
-              }
-              disabled={
-                !analystPeerId ||
-                !callerId.trim() ||
-                remoteConnected
-              }
-              type="button"
-            >
-              {remoteConnected
-                ? "CALL CONNECTED"
-                : "CONNECT TO CALLER"}
-            </button>
-
-            <div className="call-status">
-
-              <span
-                className={
-                  callStatus ===
-                  "CONNECTED"
-                    ? "status-good"
-                    : "status-neutral"
-                }
-              >
-                ●
-              </span>
-
-              {callStatus}
-
-            </div>
-
-          </div>
 
         </aside>
 
@@ -3816,141 +3523,18 @@ function LiveGuard({ onBack })  {
         </div>
       )}
 
-      <div className="roadmap-card">
-
-        <div>
-
-          <span className="card-label">
-            TRUSTGUARD ROADMAP
-          </span>
-
-          <h3>
-            Live fraud protection pipeline
-          </h3>
-
-        </div>
-
-        <div className="roadmap-items">
-
-          <div className="roadmap-item active">
-            <span>01</span>
-            Face Detection
-          </div>
-
-          <div className="roadmap-item active">
-            <span>02</span>
-            Liveness
-          </div>
-
-          <div className="roadmap-item active">
-            <span>03</span>
-            Replay / Frozen-Frame Check
-          </div>
-
-          <div className="roadmap-item active">
-            <span>04</span>
-            Face Consistency
-          </div>
-
-          <div className="roadmap-item active">
-            <span>05</span>
-            Voice Analysis
-          </div>
-
-          <div className="roadmap-item active">
-            <span>06</span>
-            Risk Fusion
-          </div>
-
-        </div>
-
-      </div>
+      <p className="lg-bottom-note">Stay in control. End the session whenever you need to; no single signal should decide for you.</p>
 
     </div>
   );
 }
 
-function SignalBox({
-  title,
-  value,
-  status,
-  good,
-}) {
-  const color =
-    good
-      ? "#44ff9a"
-      : "#ff4d6d";
-
-  return (
-    <div
-      style={{
-        margin:
-          "12px 20px 0",
-        padding:
-          "13px",
-        borderRadius:
-          "10px",
-        background:
-          "#091019",
-        border:
-          "1px solid #263342",
-      }}
-    >
-
-      <div
-        style={{
-          display:
-            "flex",
-          justifyContent:
-            "space-between",
-          alignItems:
-            "center",
-        }}
-      >
-
-        <span
-          style={{
-            color:
-              "#718095",
-            fontSize:
-              "9px",
-            fontWeight:
-              800,
-            letterSpacing:
-              "0.1em",
-          }}
-        >
-          {title}
-        </span>
-
-        <strong
-          style={{
-            color,
-            fontSize:
-              "10px",
-          }}
-        >
-          {value}
-        </strong>
-
-      </div>
-
-      <div
-        style={{
-          marginTop:
-            "7px",
-          color,
-          fontSize:
-            "10px",
-          fontWeight:
-            800,
-        }}
-      >
-        {status}
-      </div>
-
-    </div>
-  );
+function SignalBox({ title, value, status, good }) {
+  const waiting = /WAITING|UNAVAILABLE|NO AUDIO|IDLE/.test(status);
+  return <div className={`lg-signal-box ${waiting ? "waiting" : good ? "good" : "review"}`}>
+    <div><span>{title}</span><strong>{value}</strong></div>
+    <p>{status}</p>
+  </div>;
 }
 
 export default LiveGuard;

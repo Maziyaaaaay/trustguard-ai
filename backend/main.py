@@ -3870,7 +3870,9 @@ async def _analyze_media(file: UploadFile):
     image_assessed = kind == "image" and image_detection.get("available", False)
     if image_assessed:
         risk_score = clamp_score(image_detection["synthetic_model_score"])
-        signals = {"ai_image_indicator": risk_score, **signals}
+        # Uncertain classifier outputs must not become confident AI warnings.
+        signals = signals if image_detection.get("status") == "inconclusive" else {"ai_image_indicator": risk_score, **signals}
+    image_uncertain = image_assessed and image_detection.get("status") == "inconclusive"
     image_level = get_risk_level(risk_score)
     image_summary = {
         "LOW": "Low AI indication. The detector leans toward photographic content; this does not prove authenticity.",
@@ -3899,8 +3901,8 @@ async def _analyze_media(file: UploadFile):
         "kind": result.get("kind", kind),
         "media_type": result.get("media_type", kind.upper()),
         "risk": {
-            "score": risk_score,
-            "level": get_risk_level(risk_score) if kind == "video" or image_assessed else "UNVERIFIED",
+            "score": None if image_uncertain else risk_score,
+            "level": "REVIEW" if image_uncertain else get_risk_level(risk_score) if kind == "video" or image_assessed else "UNVERIFIED",
             "scope": "ai_image_indicator" if image_assessed else "temporal_anomalies" if kind == "video" else "media_quality",
         },
         "authenticity": {
@@ -3920,7 +3922,7 @@ async def _analyze_media(file: UploadFile):
         "image_detection": result.get("image_detection"),
         "findings": result.get("findings", []),
         "summary": (
-            image_summary if image_assessed else (
+            "The image classifier is uncertain. No AI/fake label or final risk score is assigned; review the original source." if image_uncertain else image_summary if image_assessed else (
                 "Authenticity unverified. Few anomalies were found by basic signal checks; AI-generated media can pass these checks."
                 if risk_score < 30 else "Quality or temporal anomalies warrant review. These do not establish AI generation or fraud."
             )

@@ -90,8 +90,8 @@ function ImageAssessment({ detection }) {
       <h3>{labels[detection.status] || "Inconclusive"}</h3>
       {detection.available ? (
         <>
-          <p>AI class model score: <strong>{detection.synthetic_model_score}/100</strong></p>
-          <p>The risk bands above match Live Guard. The classifier assessment uses a conservative uncertainty band; neither result proves that an image is real or fake.</p>
+          <p>Raw model output (not the final risk score): <strong>{detection.synthetic_model_score}/100</strong></p>
+          <p>Risk bands match Live Guard when a result is available. An uncertain classifier output receives no final score or AI/fake label. Neither a low nor a high score proves authenticity.</p>
         </>
       ) : <p>{detection.error || "The classifier could not run. Try again later."}</p>}
       <h4>Camera evidence in this file</h4>
@@ -171,10 +171,11 @@ export default function MediaAnalysisPage({ onBack }) {
 
   const scoreValue = Number(result?.risk?.score ?? result?.risk_score ?? 0);
   const score = Math.max(0, Math.min(100, Math.round(Number.isFinite(scoreValue) ? scoreValue : 0)));
-  const level = riskLevel(score);
+  const imageUncertain = kind === "image" && result?.image_detection?.available && result?.image_detection?.status === "inconclusive";
+  const level = imageUncertain ? "MEDIUM" : riskLevel(score);
   const qualityOnly = result?.risk?.scope === "media_quality" || kind === "audio";
   const imageAssessed = kind === "image" && result?.image_detection?.available;
-  const bandLabel = level === "HIGH" ? "HIGH RISK · VERIFY SOURCE" : level === "MEDIUM" ? "MODERATE RISK · REVIEW" : "LOW RISK · FEWER AI INDICATIONS";
+  const bandLabel = imageUncertain ? "REVIEW · CLASSIFICATION UNCERTAIN" : level === "HIGH" ? "HIGH RISK · VERIFY SOURCE" : level === "MEDIUM" ? "MODERATE RISK · REVIEW" : "LOW RISK · FEWER AI INDICATIONS";
   const signals = Object.entries(result?.signals || {}).filter(
     ([, value]) => typeof value === "number" && Number.isFinite(value)
   );
@@ -285,8 +286,8 @@ export default function MediaAnalysisPage({ onBack }) {
           ) : result ? (
             <div className="ma-result-content">
               <div className={`ma-score-card ${level === "HIGH" ? "high" : level === "MEDIUM" ? "medium" : "low"}`}>
-                <div className="ma-score-ring" style={{ "--score": `${score}%` }}>
-                  <span>{score}<small>/100</small></span>
+                <div className="ma-score-ring" style={{ "--score": `${imageUncertain ? 0 : score}%` }}>
+                  <span>{imageUncertain ? "—" : score}<small>{imageUncertain ? "needs review" : "/100"}</small></span>
                 </div>
                 <div className="ma-score-copy">
                   <span className="ma-kicker">{result.media_type || kind.toUpperCase()} {imageAssessed ? "AI INDICATION" : qualityOnly ? "QUALITY" : "ANOMALY"} SCORE</span>
