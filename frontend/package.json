@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "test": "node --test src/pages/liveGuardMetrics.test.js",
+    "test": "node --test src/pages/liveGuardMetrics.test.js src/services/api.test.js",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -154,18 +154,21 @@ export default function MediaAnalysisPage({ onBack }) {
 
   const runAnalysis = async () => {
     if (!file || busy) return;
-    abortRef.current = new AbortController();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setBusy(true);
     setError("");
     setResult(null);
     try {
-      const data = await analyzeMediaFile(file, { signal: abortRef.current.signal });
-      setResult(data);
+      const data = await analyzeMediaFile(file, { signal: controller.signal });
+      if (abortRef.current === controller && !controller.signal.aborted) setResult(data);
     } catch (analysisError) {
-      if (analysisError.name !== "AbortError") setError(analysisError.message);
+      if (abortRef.current === controller && analysisError.name !== "AbortError") setError(analysisError.message);
     } finally {
-      setBusy(false);
-      abortRef.current = null;
+      if (abortRef.current === controller) {
+        setBusy(false);
+        abortRef.current = null;
+      }
     }
   };
 

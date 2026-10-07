@@ -3287,9 +3287,23 @@ def _face_temporal_metrics(face_records: List[List[tuple]]) -> Dict[str, float]:
     }
 
 
+def _ffmpeg_executable() -> Optional[str]:
+    """Use the system decoder or the bundled serverless-compatible binary."""
+    executable = shutil.which("ffmpeg")
+    if executable:
+        return executable
+    try:
+        from imageio_ffmpeg import get_ffmpeg_exe
+
+        executable = get_ffmpeg_exe()
+        return executable if os.path.isfile(executable) and os.access(executable, os.X_OK) else None
+    except (ImportError, RuntimeError, OSError):
+        return None
+
+
 def _video_audio_to_wav(content: bytes, extension: str) -> Optional[str]:
     """Extract audio to a temporary WAV using FFmpeg when available."""
-    ffmpeg = shutil.which("ffmpeg")
+    ffmpeg = _ffmpeg_executable()
     if not ffmpeg:
         return None
 
@@ -3490,7 +3504,7 @@ def analyze_audio_bytes(content: bytes, filename: str) -> Dict[str, Any]:
             if not wav_path:
                 return {
                     "success": False,
-                    "error": "This audio format requires FFmpeg. Install FFmpeg or upload WAV.",
+                    "error": "The audio could not be decoded. Try a valid WAV, MP3, or M4A file.",
                 }
 
         return analyze_wav_audio(wav_path)
@@ -3657,7 +3671,7 @@ def analyze_video_forensics(content: bytes, filename: str) -> Dict[str, Any]:
         audio_result = None
         synthetic_voice = 0
         audio_note = "No audio forensic analysis was available."
-        if shutil.which("ffmpeg"):
+        if _ffmpeg_executable():
             wav_path = _video_audio_to_wav(content, extension)
             if wav_path:
                 try:
