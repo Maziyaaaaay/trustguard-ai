@@ -145,8 +145,10 @@ test("sustained ordered-loop matches alone raise replay risk above 50", () => {
   });
 
   assert.ok(loopSignals.score >= 70);
+  assert.equal(loopSignals.orderedLoopDetected, true);
   assert.ok(fused.score > 50);
   assert.equal(fused.level, "HIGH");
+  assert.ok(fused.reasons.some((reason) => reason.includes("Strong replay")));
 });
 
 test("ordered loops tolerate minor capture noise but stationary frames are not loops", () => {

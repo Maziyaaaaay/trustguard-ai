@@ -224,6 +224,9 @@ function LiveGuard({ onBack })  {
   const replayRiskRef =
     useRef(0);
 
+  const orderedLoopDetectedRef =
+    useRef(false);
+
   const consistencyRiskRef =
     useRef(0);
 
@@ -1667,13 +1670,14 @@ function LiveGuard({ onBack })  {
         frameDisruptionHistoryRef.current
       );
       replayRiskRef.current = temporal.score;
+      orderedLoopDetectedRef.current = temporal.orderedLoopDetected;
       setReplayScore(temporal.score);
       setFrameFreshness(temporal.freshness);
 
       if (temporal.score >= 70) {
         setVideoRiskStatus(
-          temporal.repeatRatio >= 0.6
-            ? "REPEATED FRAME / POSSIBLE LOOP"
+          temporal.orderedLoopDetected
+            ? "REPEATING LOOP DETECTED · POSSIBLE REPLAY"
             : temporal.disruptionCount >= 2
               ? "REPEATED FRAME DISRUPTION"
               : "HIGH REPLAY INDICATOR"
@@ -1705,6 +1709,8 @@ function LiveGuard({ onBack })  {
 
     replayRiskRef.current =
       0;
+
+    orderedLoopDetectedRef.current = false;
 
     setReplayScore(
       0
@@ -2623,6 +2629,10 @@ function LiveGuard({ onBack })  {
 
     const faces = faceCountRef.current;
     const reasons = [...result.reasons];
+
+    if (orderedLoopDetectedRef.current) {
+      reasons.push("A repeating visual sequence was detected; possible replay loop — pause and verify independently");
+    }
 
     if (faces > 1) {
       reasons.push("Multiple faces detected; review the call");

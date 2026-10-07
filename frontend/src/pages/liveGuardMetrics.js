@@ -74,7 +74,7 @@ export function scoreTemporalSignals(
   disruptions
 ) {
   if (!frameDifferences.length) {
-    return { score: 0, freshness: 100, repeatRatio: 0, disruptionCount: 0 };
+    return { score: 0, freshness: 100, repeatRatio: 0, orderedLoopDetected: false, disruptionCount: 0 };
   }
 
   const frozenRatio =
@@ -105,6 +105,7 @@ export function scoreTemporalSignals(
   if (repeatWindow.length >= 8 && repeatRatio >= 0.4) {
     score = Math.max(score, 78);
   }
+  const orderedLoopDetected = repeatWindow.length >= 8 && repeatRatio >= 0.4;
 
   const disruptionWindow = disruptions.slice(-16);
   const disruptionCount = disruptionWindow.filter(Boolean).length;
@@ -118,6 +119,7 @@ export function scoreTemporalSignals(
     score: Math.round(clamp(score)),
     freshness,
     repeatRatio,
+    orderedLoopDetected,
     disruptionCount,
   };
 }
