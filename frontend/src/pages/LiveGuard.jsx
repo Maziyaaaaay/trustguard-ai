@@ -6,7 +6,7 @@ import {
 import { Peer } from "peerjs";
 import {
   calculateTrustGuardRisk,
-  fingerprintDistance,
+  hasOrderedLoop,
   getFrameFingerprint,
   scoreTemporalSignals,
 } from "./liveGuardMetrics";
@@ -160,6 +160,11 @@ function LiveGuard({ onBack })  {
 
   const faceFoundAtRef =
     useRef(null);
+
+  const challengeArmedRef = useRef(false);
+  const challengeChannelRef = useRef(null);
+  const challengePromptRef = useRef(null);
+  const sampledVideoTimeRef = useRef(null);
 
   const challengeRef =
     useRef("WAITING");
@@ -509,8 +514,12 @@ function LiveGuard({ onBack })  {
         );
       }
 
-      activeCallRef.current =
-        call;
+      activeCallRef.current = call;
+      challengeChannelRef.current?.close();
+      const channel = peerRef.current.connect(id, { reliable: true, metadata: { kind: "trustguard-challenge" } });
+      challengeChannelRef.current = channel;
+      channel.on("open", () => { if (challengePromptRef.current) publishChallenge(challengePromptRef.current); });
+      channel.on("error", () => { /* Laptop prompt remains available if the data channel fails. */ });
 
       call.on(
         "stream",
@@ -1237,6 +1246,24 @@ function LiveGuard({ onBack })  {
   // LIVENESS
   // ==========================================================
 
+  function publishChallenge(message) {
+    challengePromptRef.current = message;
+    const channel = challengeChannelRef.current;
+    if (channel?.open) {
+      try { channel.send({ type: "trustguard-challenge", message }); } catch { /* Keep laptop prompt available. */ }
+    }
+  }
+
+  function beginLivenessChallenge() {
+    resetLiveness();
+    challengeArmedRef.current = true;
+    setLivenessStatus("FACE THE CAMERA — GET READY");
+    publishChallenge("Face the camera. Get ready for a movement prompt.");
+    setRiskScore(null);
+    setRiskLevel("ANALYZING");
+    setWarningVisible(false);
+  }
+
   function pauseLivenessChallenge(message) {
     if (challengeRef.current === "TURN") {
       challengePausedRef.current = true;
@@ -1316,7 +1343,7 @@ function LiveGuard({ onBack })  {
      */
     if (
       challengeRef.current ===
-        "WAITING" &&
+        "WAITING" && challengeArmedRef.current &&
       stableTime >
         1200
     ) {
@@ -1347,9 +1374,8 @@ function LiveGuard({ onBack })  {
         `MOVE YOUR NOSE TO SCREEN ${challengeDirectionRef.current}`
       );
 
-      setLivenessScore(
-        25
-      );
+      publishChallenge(`Move your nose toward the ${challengeDirectionRef.current === "LEFT" ? "← LEFT" : "RIGHT →"} side of the screen. Turn gently and hold for half a second.`);
+      setLivenessScore(25);
 
       /*
        * Challenge is incomplete:
@@ -1382,7 +1408,7 @@ function LiveGuard({ onBack })  {
      */
     if (
       challengeAge >
-      8000
+      15000
     ) {
       completeLivenessFailure();
 
@@ -1465,9 +1491,8 @@ function LiveGuard({ onBack })  {
     livenessRiskRef.current =
       5;
 
-    setAnalysisStatus(
-      "CONNECTED · SIGNAL REVIEW"
-    );
+    publishChallenge("Movement challenge completed. Thank you.");
+    setAnalysisStatus("CONNECTED · SIGNAL REVIEW");
   }
 
   function completeLivenessFailure() {
@@ -1484,18 +1509,18 @@ function LiveGuard({ onBack })  {
       "FAILED";
 
     setLivenessStatus(
-      "LIVENESS FAILED"
+      "NOT COMPLETED — RETRY CHALLENGE"
     );
 
     setLivenessScore(
       0
     );
 
-    livenessRiskRef.current =
-      100;
+    livenessRiskRef.current = 35;
+    publishChallenge("The movement challenge was not completed. Ask the analyst to retry; this does not prove fraud.");
 
     setAnalysisStatus(
-      "LIVENESS VERIFICATION FAILED"
+      "MOVEMENT CHALLENGE NEEDS RETRY"
     );
 
     setRiskReasons(
@@ -1506,6 +1531,8 @@ function LiveGuard({ onBack })  {
   }
 
   function resetLiveness() {
+    challengeArmedRef.current = false;
+    challengePromptRef.current = null;
     challengeRef.current =
       "WAITING";
 
@@ -1533,7 +1560,7 @@ function LiveGuard({ onBack })  {
       0;
 
     setLivenessStatus(
-      "WAITING"
+      "START THE MOVEMENT CHALLENGE WHEN READY"
     );
 
     setLivenessScore(
@@ -1549,6 +1576,11 @@ function LiveGuard({ onBack })  {
     const now = performance.now();
     if (now - lastSampleTimeRef.current < 250) return;
     lastSampleTimeRef.current = now;
+    if (sampledVideoTimeRef.current === video.currentTime) {
+      pauseLivenessChallenge("VIDEO PAUSED — WAITING FOR FRESH FRAMES");
+      return;
+    }
+    sampledVideoTimeRef.current = video.currentTime;
 
     const canvas = sampleCanvasRef.current || document.createElement("canvas");
     canvas.width = 160;
@@ -1562,14 +1594,9 @@ function LiveGuard({ onBack })  {
     const pixels = ctx.getImageData(0, 0, 160, 90).data;
     const fingerprint = getFrameFingerprint(pixels);
     const fingerprintHistory = frameFingerprintHistoryRef.current;
-    const repeatedFrame = fingerprintHistory.some(({ signature, sampledAt }) => {
-      const age = now - sampledAt;
-      return age >= 1500 && age <= 10000 &&
-        fingerprintDistance(fingerprint, signature) <= 0.05;
-    });
-
     fingerprintHistory.push({ signature: fingerprint, sampledAt: now });
-    if (fingerprintHistory.length > 40) fingerprintHistory.shift();
+    if (fingerprintHistory.length > 64) fingerprintHistory.shift();
+    const repeatedFrame = hasOrderedLoop(fingerprintHistory);
 
     repeatedFrameHistoryRef.current.push(repeatedFrame);
     if (repeatedFrameHistoryRef.current.length > 16) {
@@ -1636,6 +1663,7 @@ function LiveGuard({ onBack })  {
   }
 
   function resetReplayAnalysis() {
+    sampledVideoTimeRef.current = null;
     lastSampleTimeRef.current =
       0;
 
@@ -2544,10 +2572,8 @@ function LiveGuard({ onBack })  {
       challengeRef.current === "PASSED" ||
       challengeRef.current === "FAILED";
     const enoughSignals =
-      totalFaceFramesRef.current >= 4 &&
-      frameDiffHistoryRef.current.length >= 8 &&
-      consistencyHistoryRef.current.length >= 2 &&
-      challengeFinished;
+      frameDiffHistoryRef.current.length >= 12 &&
+      (challengeFinished || replayRiskRef.current >= 65);
 
     if (!enoughSignals) {
       setRiskScore(null);
@@ -2710,6 +2736,8 @@ function LiveGuard({ onBack })  {
   }
 
   function disconnectCall() {
+    challengeChannelRef.current?.close();
+    challengeChannelRef.current = null;
     if (
       activeCallRef.current
     ) {
@@ -2760,6 +2788,8 @@ function LiveGuard({ onBack })  {
   }
 
   function cleanupEverything() {
+    challengeChannelRef.current?.close();
+    challengeChannelRef.current = null;
     stopAnalysis();
 
     if (
@@ -3384,6 +3414,13 @@ function LiveGuard({ onBack })  {
 
         <aside className="analysis-panel">
 
+          <section className="analysis-card lg-live-checks" aria-live="polite">
+            <div className="analysis-title-row"><div><span className="card-label">LIVE CHECKS</span><h2>Movement & replay</h2></div></div>
+            <SignalBox title="LIVENESS / MOVEMENT" value={livenessScore == null ? "Not started" : `${livenessScore}% challenge progress`} status={livenessStatus} good={livenessStatus === "LIVENESS VERIFIED"} />
+            <button className="lg-challenge-button" type="button" onClick={beginLivenessChallenge} disabled={!remoteConnected || livenessStatus.includes("MOVE YOUR NOSE") || livenessStatus.includes("HOLD POSITION")}>{livenessStatus === "LIVENESS VERIFIED" ? "Run a new challenge" : livenessStatus.includes("RETRY") ? "Retry movement challenge" : "Start movement challenge"}</button>
+            <p className="lg-caption">Follow the arrow on this screen or the caller’s phone. Turn gently and hold for half a second. Allow up to 15 seconds.</p>
+            <SignalBox title="FREEZE / LOOP CHECK" value={videoRiskStatus === "WAITING" ? "Collecting frames" : `${replayScore}/100 indication`} status={videoRiskStatus} good={videoRiskStatus === "NO STRONG REPLAY SIGNAL"} />
+          </section>
           <section className={`analysis-card lg-risk ${riskLevel.toLowerCase()}`} aria-live="polite">
             <div className="analysis-title-row"><div><span className="card-label">03 · REVIEW THE SIGNALS</span><h2>Call risk overview</h2></div><span className="lg-risk-status">{riskScore == null ? "Waiting for evidence" : riskLevel}</span></div>
             <div className="lg-risk-number">{riskScore == null ? "—" : riskScore}<small>{riskScore == null ? "No score yet" : " / 100"}</small></div>

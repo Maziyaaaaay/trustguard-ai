@@ -8,6 +8,7 @@ function Caller() {
   const videoRef = useRef(null);
   const peerRef = useRef(null);
   const activeCallRef = useRef(null);
+  const challengeChannelRef = useRef(null);
   const cameraStreamRef = useRef(null);
   const outgoingStreamRef = useRef(null);
   const fileVideoRef = useRef(null);
@@ -29,6 +30,7 @@ function Caller() {
   const [status, setStatus] = useState("Starting...");
   const [error, setError] = useState("");
   const [switchingVideo, setSwitchingVideo] = useState(false);
+  const [challengePrompt, setChallengePrompt] = useState("");
 
   startCallerRef.current = startCaller;
   cleanupCallerRef.current = cleanupCaller;
@@ -100,6 +102,18 @@ function Caller() {
         setError("");
       });
 
+      peer.on("connection", (channel) => {
+        if (channel.metadata?.kind !== "trustguard-challenge") { channel.close(); return; }
+        challengeChannelRef.current?.close();
+        challengeChannelRef.current = channel;
+        channel.on("data", (data) => {
+          if (activeCallRef.current?.peer !== channel.peer || data?.type !== "trustguard-challenge" || typeof data.message !== "string") return;
+          setChallengePrompt(data.message.slice(0, 300));
+        });
+        channel.on("close", () => { if (challengeChannelRef.current === channel) setChallengePrompt(""); });
+        channel.on("error", () => { if (challengeChannelRef.current === channel) setChallengePrompt(""); });
+      });
+
       peer.on("call", (call) => {
         console.log("📞 Incoming analyst call");
 
@@ -124,6 +138,7 @@ function Caller() {
           call.on("close", () => {
             console.log("📴 Analyst call closed");
             activeCallRef.current = null;
+            setChallengePrompt("");
 
             setStatus(
               sourceMode === "video"
@@ -639,6 +654,9 @@ function Caller() {
   }
 
   function cleanupPeer() {
+    challengeChannelRef.current?.close();
+    challengeChannelRef.current = null;
+    setChallengePrompt("");
     if (activeCallRef.current) {
       try {
         activeCallRef.current.close();
@@ -713,6 +731,7 @@ function Caller() {
       </header>
 
       <main className="caller-content">
+        {challengePrompt && <section className="caller-challenge-prompt" aria-live="assertive"><strong>Live movement challenge</strong><p>{challengePrompt}</p><small>This checks response to a prompt; it is not proof of identity.</small></section>}
         <div className="caller-title">
           <div className="eyebrow">TRUSTGUARD / CALLER</div>
           <h1>Secure video call</h1>

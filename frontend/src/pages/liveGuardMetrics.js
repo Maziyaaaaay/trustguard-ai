@@ -27,7 +27,7 @@ export function getFrameFingerprint(pixels, width = 160, height = 90) {
       }
 
       fingerprint.push(
-        Math.round(luminanceTotal / Math.max(samples, 1) / 16)
+        Math.round(luminanceTotal / Math.max(samples, 1) / 4)
       );
     }
   }
@@ -49,6 +49,23 @@ export function fingerprintDistance(left, right) {
   return changedCells / left.length;
 }
 
+// A loop must repeat an ordered, visibly changing sequence, not one similar frame.
+export function hasOrderedLoop(history, sequenceLength = 6) {
+  if (history.length < sequenceLength * 2) return false;
+  const currentStart = history.length - sequenceLength;
+  const current = history.slice(currentStart);
+  if (fingerprintDistance(current[0].signature, current.at(-1).signature) < 0.12) return false;
+  for (let start = 0; start <= currentStart - sequenceLength; start += 1) {
+    const lag = current[0].sampledAt - history[start].sampledAt;
+    if (lag < 1500 || lag > 12000) continue;
+    const matches = current.filter((item, index) =>
+      fingerprintDistance(item.signature, history[start + index].signature) <= 0.02
+    ).length;
+    if (matches === sequenceLength) return true;
+  }
+  return false;
+}
+
 export function scoreTemporalSignals(
   frameDifferences,
   repeatedFrames,
@@ -59,21 +76,21 @@ export function scoreTemporalSignals(
   }
 
   const frozenRatio =
-    frameDifferences.filter((value) => value < 2.2).length /
+    frameDifferences.filter((value) => value < 0.12).length /
     frameDifferences.length;
   const freshness = Math.round(clamp(100 - frozenRatio * 100));
   let score = 0;
 
-  if (frameDifferences.length >= 10 && frozenRatio > 0.75) {
-    score += 65;
-  } else if (frameDifferences.length >= 8 && frozenRatio > 0.55) {
+  if (frameDifferences.length >= 12 && frozenRatio > 0.9) {
+    score += 75;
+  } else if (frameDifferences.length >= 12 && frozenRatio > 0.65) {
     score += 35;
   }
 
   const meanDifference =
     frameDifferences.reduce((sum, value) => sum + value, 0) /
     frameDifferences.length;
-  if (frameDifferences.length >= 10 && meanDifference < 1.5) {
+  if (frameDifferences.length >= 12 && meanDifference < 0.12) {
     score += 25;
   }
 
@@ -91,7 +108,7 @@ export function scoreTemporalSignals(
   if (disruptionWindow.length >= 8 && disruptionCount >= 3) {
     score = Math.max(score, 78);
   } else if (disruptionWindow.length >= 8 && disruptionCount >= 2) {
-    score = Math.max(score, 65);
+    score = Math.max(score, 45);
   }
 
   return {
@@ -121,7 +138,7 @@ export function calculateTrustGuardRisk({
     { name: "Replay / temporal anomaly", value: replayRisk, weight: 0.30 },
     {
       name: "Liveness challenge",
-      value: livenessCompleted ? livenessRisk : null,
+      value: livenessCompleted && !livenessFailed ? livenessRisk : null,
       weight: 0.45,
     },
     { name: "Face consistency", value: faceConsistencyRisk, weight: 0.15 },
@@ -158,7 +175,7 @@ export function calculateTrustGuardRisk({
   let adjustedScore = score;
   // Strong direct interaction or temporal anomalies must cross the project's
   // >50 HIGH threshold. This warns of risk; it does not prove deepfake content.
-  if (livenessFailed) adjustedScore = Math.max(adjustedScore, 55);
+  if (livenessFailed) adjustedScore = Math.max(adjustedScore, 35);
   if (typeof replayRisk === "number" && replayRisk >= 65) {
     adjustedScore = Math.max(adjustedScore, 55);
   }
@@ -171,7 +188,7 @@ export function calculateTrustGuardRisk({
     );
   }
   if (livenessFailed) {
-    reasons.push("Liveness challenge failed; retry or verify manually");
+    reasons.push("Movement challenge was not completed; retry. This alone is not a fraud finding");
   }
   if (!reasons.length) {
     reasons.push("No immediate high-risk signal detected");

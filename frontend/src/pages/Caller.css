@@ -633,3 +633,7 @@
     align-items: flex-start;
   }
 }
+.caller-challenge-prompt { position: sticky; top: 12px; z-index: 20; margin-bottom: 20px; padding: 20px; border: 2px solid #81d6af; border-radius: 18px; color: #eefff6; background: #184c3c; box-shadow: 0 8px 30px #0003; }
+.caller-challenge-prompt strong { font-size: 16px; }
+.caller-challenge-prompt p { margin: 12px 0; font-size: 23px; line-height: 1.4; }
+.caller-challenge-prompt small { color: #bfe6d3; font-size: 12px; }
