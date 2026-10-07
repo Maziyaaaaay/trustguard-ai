@@ -236,6 +236,7 @@ Latest AASIST integration checks recorded:
 - A detected ordered loop immediately raises replay risk to at least 78/100 and remains latched until that call is reset or ended. A later rolling window cannot reduce it. The risk fusion reason identifies the repeated visual sequence as a possible replay.
 - Added tests cover a repeating 10-second face-motion trajectory with capture variation, a single non-repeating pass, live-like changing landmark noise, and the sticky high-risk result after the loop scrolls out.
 - These tests exercise the sequence logic; they do not replace a real phone filming a looping screen test. Detection still depends on a visible, trackable face and enough seconds for the clip to repeat.
+- Follow-up speed/reliability tuning samples face motion at up to 8 Hz (from 4 Hz), retains 18 seconds of samples, and allows small numeric landmark variation from camera capture. A 10-second loop simulation is detected by 11 seconds elapsed, within about one second after it begins repeating. It cannot be flagged as a loop before any content has repeated.
 
 Security checks and their limits:
 

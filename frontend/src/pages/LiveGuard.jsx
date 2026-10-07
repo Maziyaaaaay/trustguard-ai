@@ -1754,7 +1754,9 @@ function LiveGuard({ onBack })  {
 
   function analyzeFaceReplayLoop(landmarks) {
     const now = performance.now();
-    if (now - lastFaceReplaySampleRef.current < 250) return;
+    // Sample more often than the full-frame fallback so a confirmed loop is
+    // recognized within the first second of its repeat, including on 10s clips.
+    if (now - lastFaceReplaySampleRef.current < 125) return;
     lastFaceReplaySampleRef.current = now;
 
     const leftEye = landmarks[33];
@@ -1786,11 +1788,15 @@ function LiveGuard({ onBack })  {
 
     const history = faceReplayHistoryRef.current;
     history.push({ signature, sampledAt: now });
-    if (history.length > 72) history.shift();
+    if (history.length > 144) history.shift();
 
-    // At 4 samples/sec this checks for repeated face-motion patterns from
-    // short clips (including ~10s loops), allowing camera/capture jitter.
-    if (hasOrderedLoop(history, 6, 0.22, 0.12)) {
+    // At up to 8 samples/sec, six motion samples span under a second. The
+    // value tolerance absorbs landmark jitter from filming a screen.
+    if (
+      hasOrderedLoop(history, 6, 0.22, 0.12, {
+        valueTolerance: 4,
+      })
+    ) {
       orderedLoopDetectedRef.current = true;
       replayRiskRef.current = Math.max(replayRiskRef.current, 78);
       setReplayScore(replayRiskRef.current);

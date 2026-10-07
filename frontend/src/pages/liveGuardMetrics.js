@@ -35,14 +35,14 @@ export function getFrameFingerprint(pixels, width = 160, height = 90) {
   return fingerprint;
 }
 
-export function fingerprintDistance(left, right) {
+export function fingerprintDistance(left, right, valueTolerance = 1) {
   if (!left || !right || left.length !== right.length || !left.length) {
     return 1;
   }
 
   const changedCells = left.reduce(
     (total, value, index) =>
-      total + (Math.abs(value - right[index]) > 1 ? 1 : 0),
+      total + (Math.abs(value - right[index]) > valueTolerance ? 1 : 0),
     0
   );
 
@@ -54,21 +54,28 @@ export function hasOrderedLoop(
   history,
   sequenceLength = 6,
   maxFrameDistance = 0.05,
-  minMotionDistance = 0.12
+  minMotionDistance = 0.12,
+  options = {}
 ) {
+  const {
+    valueTolerance = 1,
+    minLagMs = 1500,
+    maxLagMs = 12000,
+    minMatches = sequenceLength - 1,
+  } = options;
   if (history.length < sequenceLength * 2) return false;
   const currentStart = history.length - sequenceLength;
   const current = history.slice(currentStart);
   if (fingerprintDistance(current[0].signature, current.at(-1).signature) < minMotionDistance) return false;
   for (let start = 0; start <= currentStart - sequenceLength; start += 1) {
     const lag = current[0].sampledAt - history[start].sampledAt;
-    if (lag < 1500 || lag > 12000) continue;
+    if (lag < minLagMs || lag > maxLagMs) continue;
     const matches = current.filter((item, index) =>
-      fingerprintDistance(item.signature, history[start + index].signature) <= maxFrameDistance
+      fingerprintDistance(item.signature, history[start + index].signature, valueTolerance) <= maxFrameDistance
     ).length;
     // Permit a small amount of capture/compression noise while still
     // requiring nearly the entire ordered sequence to repeat.
-    if (matches >= sequenceLength - 1) return true;
+    if (matches >= minMatches) return true;
   }
   return false;
 }
