@@ -1681,7 +1681,7 @@ function LiveGuard({ onBack })  {
       } else if (temporal.score >= 35) {
         setVideoRiskStatus("REVIEW VIDEO SIGNALS");
       } else {
-        setVideoRiskStatus("NO STRONG REPLAY SIGNAL");
+        setVideoRiskStatus("NO LOOP SEEN IN SAMPLED FRAMES");
       }
     }
 
@@ -3446,7 +3446,8 @@ function LiveGuard({ onBack })  {
             <div className="analysis-title-row"><div><span className="card-label">LIVE CHECKS</span><h2>Movement & replay</h2></div></div>
             <SignalBox title="LIVENESS / MOVEMENT" value={livenessScore == null ? (remoteConnected ? "Waiting for one face" : "Waiting for caller") : `${livenessScore}% challenge progress`} status={livenessStatus} good={livenessStatus === "LIVENESS VERIFIED"} />
             <p className="lg-caption">The check starts automatically when one face is visible. Follow the on-screen prompt, turn gently, and hold for half a second. If a try is missed, it retries automatically.</p>
-            <SignalBox title="FREEZE / LOOP CHECK" value={videoRiskStatus === "WAITING" ? "Collecting frames" : `${replayScore}/100 indication`} status={videoRiskStatus} good={videoRiskStatus === "NO STRONG REPLAY SIGNAL"} />
+            <SignalBox title="FREEZE / LOOP CHECK" value={videoRiskStatus === "WAITING" ? "Collecting frames" : `${replayScore}/100 indication`} status={videoRiskStatus} good={videoRiskStatus === "NO LOOP SEEN IN SAMPLED FRAMES"} />
+            <p className="lg-caption">No loop seen does not prove the caller is live. Movement prompts check for a live response.</p>
           </section>
           <section className={`analysis-card lg-risk ${riskLevel.toLowerCase()}`} aria-live="polite">
             <div className="analysis-title-row"><div><span className="card-label">03 · REVIEW THE SIGNALS</span><h2>Call risk overview</h2></div><span className="lg-risk-status">{riskScore == null ? "Waiting for evidence" : riskLevel}</span></div>
@@ -3553,7 +3554,7 @@ function LiveGuard({ onBack })  {
                 videoRiskStatus
               }
               good={
-                videoRiskStatus === "NO STRONG REPLAY SIGNAL"
+                videoRiskStatus === "NO LOOP SEEN IN SAMPLED FRAMES"
               }
             />
 

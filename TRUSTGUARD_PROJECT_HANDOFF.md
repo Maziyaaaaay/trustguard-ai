@@ -224,7 +224,9 @@ Latest AASIST integration checks recorded:
 
 - `1-yad-demo.mp4` is approximately 9.97 seconds, H.264 video with AAC audio, at about 24 fps.
 - A local replay-check pass sampled 41 frames at roughly 4 fps. The current ordered-loop detector did not find a repeated sequence during the single playback; frame content changed continuously.
+- Replaying the sampled sequence twice in a local algorithm simulation produced ordered-loop detections and a 78/100 replay signal after the second pass. This validates the detector logic on repeated source frames, not camera/display capture conditions.
 - This explains why the clip did not trigger loop risk on a one-pass run. The old 35 score reflected a missed movement challenge, not an AI classifier result. The new flow starts movement prompts automatically and retries; two distinct missed prompts now raise a high live-response warning. Sustained ordered loops independently raise the replay score above 50.
+- UI copy now says “No loop seen in sampled frames” and explicitly explains that this does not prove the caller is live.
 - This sample inspection is not proof that the clip is AI-generated, and the exact physical screen-to-camera live setup has not been exercised by an automated test. Confirm using the real phone/laptop demo.
 
 Security checks and their limits:
