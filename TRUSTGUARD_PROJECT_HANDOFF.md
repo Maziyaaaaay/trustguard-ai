@@ -229,6 +229,14 @@ Latest AASIST integration checks recorded:
 - UI copy now says “No loop seen in sampled frames” and explicitly explains that this does not prove the caller is live.
 - This sample inspection is not proof that the clip is AI-generated, and the exact physical screen-to-camera live setup has not been exercised by an automated test. Confirm using the real phone/laptop demo.
 
+### Screen-recorded live-loop miss (7 October 2026)
+
+- A later phone-to-laptop test showed that whole-frame brightness fingerprints could miss a loop when the phone moved or camera exposure changed while filming the playback screen.
+- Live Guard now also compares the caller's face-landmark motion sequence, normalized to eye distance and sampled at about four times per second. It checks ordered six-sample sequences over the recent history and permits some landmark variation from capture jitter. This is a replay-loop clue, not an AI-video classifier.
+- A detected ordered loop immediately raises replay risk to at least 78/100 and remains latched until that call is reset or ended. A later rolling window cannot reduce it. The risk fusion reason identifies the repeated visual sequence as a possible replay.
+- Added tests cover a repeating 10-second face-motion trajectory with capture variation, a single non-repeating pass, live-like changing landmark noise, and the sticky high-risk result after the loop scrolls out.
+- These tests exercise the sequence logic; they do not replace a real phone filming a looping screen test. Detection still depends on a visible, trackable face and enough seconds for the clip to repeat.
+
 Security checks and their limits:
 
 - The AASIST bundle checksum is verified at model-load time.

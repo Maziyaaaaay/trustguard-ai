@@ -32,6 +32,10 @@ const TRACK_POINTS = [
   356,
 ];
 
+// Facial landmarks normalized to eye distance and center. This makes the
+// replay comparison less sensitive to a phone being moved or auto-exposure.
+const REPLAY_TRACK_POINTS = [1, 33, 263, 61, 291, 13, 14, 10, 152];
+
 function clamp(value, min = 0, max = 100) {
   return Math.max(
     min,
@@ -132,6 +136,15 @@ function LiveGuard({ onBack })  {
 
   const frameFingerprintHistoryRef =
     useRef([]);
+
+  const faceReplayHistoryRef =
+    useRef([]);
+
+  const previousFaceReplayPoseRef =
+    useRef(null);
+
+  const lastFaceReplaySampleRef =
+    useRef(0);
 
   const repeatedFrameHistoryRef =
     useRef([]);
@@ -1170,6 +1183,8 @@ function LiveGuard({ onBack })  {
             landmarks
           );
 
+          analyzeFaceReplayLoop(landmarks);
+
           analyzeFaceConsistency(
             landmarks
           );
@@ -1709,6 +1724,9 @@ function LiveGuard({ onBack })  {
       [];
 
     frameFingerprintHistoryRef.current = [];
+    faceReplayHistoryRef.current = [];
+    previousFaceReplayPoseRef.current = null;
+    lastFaceReplaySampleRef.current = 0;
     repeatedFrameHistoryRef.current = [];
     frameDisruptionHistoryRef.current = [];
 
@@ -1733,6 +1751,52 @@ function LiveGuard({ onBack })  {
   // ==========================================================
   // FACE CONSISTENCY
   // ==========================================================
+
+  function analyzeFaceReplayLoop(landmarks) {
+    const now = performance.now();
+    if (now - lastFaceReplaySampleRef.current < 250) return;
+    lastFaceReplaySampleRef.current = now;
+
+    const leftEye = landmarks[33];
+    const rightEye = landmarks[263];
+    if (!leftEye || !rightEye) return;
+
+    const eyeDistance = Math.max(distance(leftEye, rightEye), 0.01);
+    const centerX = (leftEye.x + rightEye.x) / 2;
+    const centerY = (leftEye.y + rightEye.y) / 2;
+    const pose = REPLAY_TRACK_POINTS.flatMap((index) => {
+      const point = landmarks[index];
+      if (!point) return [];
+      return [
+        ((point.x - centerX) / eyeDistance) * 100,
+        ((point.y - centerY) / eyeDistance) * 100,
+      ];
+    });
+    if (pose.length !== REPLAY_TRACK_POINTS.length * 2) return;
+
+    const previousPose = previousFaceReplayPoseRef.current;
+    previousFaceReplayPoseRef.current = pose;
+    if (!previousPose) return;
+
+    // Compare motion from frame to frame, rather than static face shape. That
+    // prevents naturally similar-looking face poses from counting as a loop.
+    const signature = pose.map((value, index) =>
+      Math.round((value - previousPose[index]) * 10)
+    );
+
+    const history = faceReplayHistoryRef.current;
+    history.push({ signature, sampledAt: now });
+    if (history.length > 72) history.shift();
+
+    // At 4 samples/sec this checks for repeated face-motion patterns from
+    // short clips (including ~10s loops), allowing camera/capture jitter.
+    if (hasOrderedLoop(history, 6, 0.22, 0.12)) {
+      orderedLoopDetectedRef.current = true;
+      replayRiskRef.current = Math.max(replayRiskRef.current, 78);
+      setReplayScore(replayRiskRef.current);
+      setVideoRiskStatus("REPEATING FACE-MOTION LOOP · POSSIBLE REPLAY");
+    }
+  }
 
   function createFaceSignature(
     landmarks

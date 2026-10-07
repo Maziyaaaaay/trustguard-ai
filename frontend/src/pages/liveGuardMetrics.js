@@ -50,16 +50,21 @@ export function fingerprintDistance(left, right) {
 }
 
 // A loop must repeat an ordered, visibly changing sequence, not one similar frame.
-export function hasOrderedLoop(history, sequenceLength = 6) {
+export function hasOrderedLoop(
+  history,
+  sequenceLength = 6,
+  maxFrameDistance = 0.05,
+  minMotionDistance = 0.12
+) {
   if (history.length < sequenceLength * 2) return false;
   const currentStart = history.length - sequenceLength;
   const current = history.slice(currentStart);
-  if (fingerprintDistance(current[0].signature, current.at(-1).signature) < 0.12) return false;
+  if (fingerprintDistance(current[0].signature, current.at(-1).signature) < minMotionDistance) return false;
   for (let start = 0; start <= currentStart - sequenceLength; start += 1) {
     const lag = current[0].sampledAt - history[start].sampledAt;
     if (lag < 1500 || lag > 12000) continue;
     const matches = current.filter((item, index) =>
-      fingerprintDistance(item.signature, history[start + index].signature) <= 0.05
+      fingerprintDistance(item.signature, history[start + index].signature) <= maxFrameDistance
     ).length;
     // Permit a small amount of capture/compression noise while still
     // requiring nearly the entire ordered sequence to repeat.

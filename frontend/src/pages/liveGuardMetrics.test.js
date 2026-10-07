@@ -191,3 +191,51 @@ test("ordered loops tolerate minor capture noise but stationary frames are not l
   assert.equal(hasOrderedLoop(repeated), true);
   assert.equal(hasOrderedLoop(stationary), false);
 });
+
+test("normalized face-motion loop survives small landmark jitter", () => {
+  const clipLength = 40; // 10 seconds at four samples per second
+  const poses = Array.from({ length: clipLength }, (_, i) => [
+    Math.round(Math.sin(i * 0.31) * 20),
+    Math.round(Math.cos(i * 0.19) * 12),
+    Math.round(Math.sin(i * 0.11) * 7),
+    Math.round(Math.cos(i * 0.27) * 10),
+  ]);
+  const trajectory = poses.map((pose, i) =>
+    pose.map((value, index) =>
+      Math.round((value - poses[(i + clipLength - 1) % clipLength][index]) * 10)
+    )
+  );
+  const repeated = Array.from({ length: 80 }, (_, i) => {
+    const signature = trajectory[i % clipLength].map((value, index) =>
+      value + (i >= clipLength && index === 0 && i % 4 === 0 ? 1 : 0)
+    );
+    return { signature, sampledAt: i * 250 };
+  });
+
+  assert.equal(hasOrderedLoop(repeated, 6, 0.2, 0.04), true);
+});
+
+test("a single changing face-motion pass is not a loop", () => {
+  const onePass = Array.from({ length: 40 }, (_, i) => ({
+    signature: [i * 3, Math.sin(i * 0.3) * 20, i * i, Math.cos(i * 0.17) * 13],
+    sampledAt: i * 250,
+  }));
+
+  assert.equal(hasOrderedLoop(onePass, 6, 0.22, 0.12), false);
+});
+
+test("live-like face landmark jitter does not count as a repeating loop", () => {
+  let seed = 17;
+  const nextJitter = () => {
+    seed = (seed * 48271) % 2147483647;
+    return Math.round(((seed / 2147483647) - 0.5) * 8);
+  };
+  const naturalMotion = Array.from({ length: 72 }, (_, i) => ({
+    signature: Array.from({ length: 18 }, (_, point) =>
+      Math.round(Math.sin(i * (0.07 + point * 0.003) + point) * 2) + nextJitter()
+    ),
+    sampledAt: i * 250,
+  }));
+
+  assert.equal(hasOrderedLoop(naturalMotion, 6, 0.22, 0.12), false);
+});
